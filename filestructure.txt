@@ -1,0 +1,7 @@
+|-- .env
+|-- .gitignore
+|-- index.js
+|-- LICENSE
+|-- package-lock.json
+|-- package.json
+|-- README.md
