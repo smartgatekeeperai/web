@@ -313,7 +313,7 @@ app.get('/system-config', (req, res) => {
   return res.sendFile(path.join(publicDir, 'system-config.html'));
 });
 
-// (Optional) Camera page if you have public/camera.html
+// Camera page (if you have public/camera.html)
 app.get('/camera', (req, res) => {
   return res.sendFile(path.join(publicDir, 'camera.html'));
 });
@@ -465,15 +465,23 @@ app.post('/detect', upload.single('frame'), async (req, res) => {
 });
 
 // ----------------------------------------------------
-// Start server
+// Local dev server (disabled on Vercel)
 // ----------------------------------------------------
-app.listen(PORT, () => {
-  console.log(`🚀 Groq OCR server running on http://0.0.0.0:${PORT}`);
-  console.log(`🔐 Admin dashboard: http://localhost:${PORT}/dashboard`);
-  console.log(`👤 Users:           http://localhost:${PORT}/users`);
-  console.log(`🚗 Drivers:         http://localhost:${PORT}/drivers`);
-  console.log(`🆔 ID Category:     http://localhost:${PORT}/id-category`);
-  console.log(`📜 Logs:            http://localhost:${PORT}/logs`);
-  console.log(`🛡️ Role:            http://localhost:${PORT}/role`);
-  console.log(`⚙️ System Config:   http://localhost:${PORT}/system-config`);
-});
+if (process.env.VERCEL !== '1') {
+  app.listen(PORT, () => {
+    console.log(`🚀 Groq OCR server running on http://0.0.0.0:${PORT}`);
+    console.log(`🔐 Admin dashboard: http://localhost:${PORT}/dashboard`);
+    console.log(`👤 Users:           http://localhost:${PORT}/users`);
+    console.log(`🚗 Drivers:         http://localhost:${PORT}/drivers`);
+    console.log(`🆔 ID Category:     http://localhost:${PORT}/id-category`);
+    console.log(`📜 Logs:            http://localhost:${PORT}/logs`);
+    console.log(`🛡️ Role:            http://localhost:${PORT}/role`);
+    console.log(`⚙️ System Config:   http://localhost:${PORT}/system-config`);
+  });
+}
+
+// ----------------------------------------------------
+// Vercel handler export
+// ----------------------------------------------------
+const handler = (req, res) => app(req, res);
+export default handler;
