@@ -6,12 +6,7 @@ import dotenv from 'dotenv';
 import Groq from 'groq-sdk';
 import { imageSize } from 'image-size';
 import pkg from 'pg';
-
-// NEW: path + __dirname resolution for ESM
 import path from 'path';
-import { fileURLToPath } from 'url';
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 
 dotenv.config();
 
@@ -39,9 +34,6 @@ let inFlightDetections = 0;
 const MAX_CONCURRENT_DETECTIONS = 1; // you can bump this to 2–3 if needed
 
 // Groq OCR model (recommended for OCR)
-// You can change this to:
-//  - 'llama-3.2-11b-vision-instruct'
-//  - 'llava-v1.6-34b'
 const OCR_MODEL = 'meta-llama/llama-4-scout-17b-16e-instruct';
 
 // ----------------------------------------------------
@@ -78,10 +70,6 @@ function encodeBytesToDataUrl(buffer, contentType) {
 
 // ----------------------------------------------------
 // DB helper: get next active API key (auto-switch)
-// - Uses a transaction + FOR UPDATE to safely pick the
-//   key with the lowest "Usage".
-// - Increments "Usage" atomically.
-//   Table: dbo."APIKeyManagement" ("Email", "Name", "APIKey", "Usage", "Active")
 // ----------------------------------------------------
 async function getNextApiKeyFromDb() {
   const client = await pool.connect();
@@ -118,8 +106,7 @@ async function getNextApiKeyFromDb() {
 
     await client.query('COMMIT');
 
-    // row: { Email, Name, APIKey, Usage }
-    return row;
+    return row; // { Email, Name, APIKey, Usage }
   } catch (err) {
     try {
       await client.query('ROLLBACK');
@@ -134,14 +121,6 @@ async function getNextApiKeyFromDb() {
 
 // ----------------------------------------------------
 // Groq Vision OCR + BBOX
-// - Takes a Groq client (constructed with a DB key)
-// - Returns:
-//   {
-//     plate_text: string,
-//     ocr_conf: number,
-//     nx1, ny1, nx2, ny2 (normalized 0..1)
-//   }
-//   or null on failure / UNKNOWN / rate-limit
 // ----------------------------------------------------
 async function groqPlateDetect(groqClient, imageBuffer, contentType) {
   const dataUrl = encodeBytesToDataUrl(imageBuffer, contentType);
@@ -203,7 +182,6 @@ async function groqPlateDetect(groqClient, imageBuffer, contentType) {
       return null;
     }
 
-    // Extract JSON object from the response
     const firstBrace = text.indexOf('{');
     const lastBrace = text.lastIndexOf('}');
     if (firstBrace === -1 || lastBrace === -1 || lastBrace <= firstBrace) {
@@ -236,7 +214,6 @@ async function groqPlateDetect(groqClient, imageBuffer, contentType) {
     nx2 = clamp01(nx2);
     ny2 = clamp01(ny2);
 
-    // Ensure nx2 >= nx1, ny2 >= ny1
     if (nx2 < nx1) [nx1, nx2] = [nx2, nx1];
     if (ny2 < ny1) [ny1, ny2] = [ny2, ny1];
 
@@ -259,7 +236,6 @@ async function groqPlateDetect(groqClient, imageBuffer, contentType) {
 
     if (isRateLimit) {
       console.warn('[GroqPlateDetect] Rate limit hit for this key; skipping this frame.');
-      // IMPORTANT: no throw → /detect will just return no detections
       return null;
     }
 
@@ -271,7 +247,7 @@ async function groqPlateDetect(groqClient, imageBuffer, contentType) {
 // ----------------------------------------------------
 // Admin Dashboard Routes (HTML pages in /public)
 // ----------------------------------------------------
-const publicDir = path.join(__dirname, 'public');
+const publicDir = path.join(process.cwd(), 'public');
 
 // Root → redirect to /dashboard
 app.get('/', (req, res) => {
@@ -283,9 +259,9 @@ app.get('/dashboard', (req, res) => {
   return res.sendFile(path.join(publicDir, 'index.html'));
 });
 
-// Users page
+// Users page (NOTE: user.html – matches your file list)
 app.get('/users', (req, res) => {
-  return res.sendFile(path.join(publicDir, 'users.html'));
+  return res.sendFile(path.join(publicDir, 'user.html'));
 });
 
 // Drivers page
@@ -313,7 +289,7 @@ app.get('/system-config', (req, res) => {
   return res.sendFile(path.join(publicDir, 'system-config.html'));
 });
 
-// Camera page (if you have public/camera.html)
+// Camera page
 app.get('/camera', (req, res) => {
   return res.sendFile(path.join(publicDir, 'camera.html'));
 });
@@ -322,20 +298,12 @@ app.get('/camera', (req, res) => {
 // Static Web Server for /public assets (CSS, JS, etc.)
 // ----------------------------------------------------
 app.use(express.static(publicDir));
-// Examples after this:
-//   /css/dashboard.css       → public/css/dashboard.css
-//   /scs/user.css            → public/scs/user.css
-//   /js/users.js             → public/js/users.js
 
 // ----------------------------------------------------
 // Route: POST /detect
-//   - field name: "frame"   (matches Ionic code)
-//   - query param: stream_id
-//   - returns: DetectResponse
 // ----------------------------------------------------
 app.post('/detect', upload.single('frame'), async (req, res) => {
   if (inFlightDetections >= MAX_CONCURRENT_DETECTIONS) {
-    // Respond quickly; client can just treat as "no detections"
     return res.json({
       stream_id: req.query.stream_id || null,
       image_w: 0,
@@ -361,12 +329,10 @@ app.post('/detect', upload.single('frame'), async (req, res) => {
       return res.status(400).json({ detail: 'File must be an image' });
     }
 
-    // Groq base64 limit ~4MB
     if (size > 4 * 1024 * 1024) {
       return res.status(400).json({ detail: 'Image too large (>4MB) for Groq' });
     }
 
-    // Get image width & height for frontend mapping
     const dim = imageSize(buffer);
     const image_w = dim.width;
     const image_h = dim.height;
@@ -375,7 +341,6 @@ app.post('/detect', upload.single('frame'), async (req, res) => {
       return res.status(400).json({ detail: 'Unable to read image dimensions' });
     }
 
-    // ----- Get next API key from DB and construct Groq client -----
     let keyRow;
     try {
       keyRow = await getNextApiKeyFromDb();
@@ -386,7 +351,6 @@ app.post('/detect', upload.single('frame'), async (req, res) => {
 
     const groqClient = new Groq({ apiKey: keyRow.APIKey });
 
-    // ----- Ask Groq for plate + bbox -----
     const detectionResult = await groqPlateDetect(groqClient, buffer, mimetype);
 
     if (
@@ -407,13 +371,11 @@ app.post('/detect', upload.single('frame'), async (req, res) => {
     const cleanPlate = detectionResult.plate_text.trim();
     const ocr_conf = detectionResult.ocr_conf ?? 0;
 
-    // Normalized coords 0..1
     const nx1 = detectionResult.nx1;
     const ny1 = detectionResult.ny1;
     const nx2 = detectionResult.nx2;
     const ny2 = detectionResult.ny2;
 
-    // Convert normalized → pixels
     const x1 = nx1 * image_w;
     const y1 = ny1 * image_h;
     const x2 = nx2 * image_w;
