@@ -51,7 +51,7 @@ export function createControllers({ pool }) {
         throw new Error('No active API keys found in dbo."APIKeyManagement"');
       }
 
-      const row = selectRes.camelcaseKeys(rows[0]);
+      const row = rows[0];
 
       await client.query(
         `
