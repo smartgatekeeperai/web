@@ -1,0 +1,134 @@
+﻿<!-- public/index.html -->
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dashboard</title>
+
+  <!-- Font Awesome for icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
+
+  <!-- Shared layout styles -->
+  <link rel="stylesheet" href="css/layout.css" />
+
+  <!-- Optional: extra dashboard-only styles -->
+  <link rel="stylesheet" href="css/dashboard.css" />
+</head>
+
+<body data-page="dashboard">
+  <!-- Shared layout will render into this -->
+  <div id="app"></div>
+
+  <!-- This template is the *page-specific* content only -->
+  <template id="page-content">
+    <div class="stats">
+      <div class="stat-card">
+        <i class="fas fa-dollar-sign icon"></i>
+        <h3>$12,345</h3>
+        <p>Total Sales</p>
+      </div>
+      <div class="stat-card">
+        <i class="fas fa-clipboard-list icon"></i>
+        <h3>1,234</h3>
+        <p>Total Orders</p>
+      </div>
+      <div class="stat-card">
+        <i class="fas fa-users icon"></i>
+        <h3>567</h3>
+        <p>Total Customers</p>
+      </div>
+      <div class="stat-card">
+        <i class="fas fa-percentage icon"></i>
+        <h3>89%</h3>
+        <p>Conversion Rate</p>
+      </div>
+    </div>
+    <div class="search-container">
+      <div class="search-bar">
+        <input type="text" id="searchInput" placeholder="Search orders...">
+        <i class="fas fa-search search-icon"></i>
+      </div>
+    </div>
+
+    <div class="table-container">
+      <table>
+        <thead>
+          <tr>
+            <th>Order ID</th>
+            <th>Customer</th>
+            <th>Product</th>
+            <th>Amount</th>
+            <th>Status</th>
+            <th>Order Created</th>
+          </tr>
+          <tr class="filters">
+            <th><input type="text" id="filterOrderID" placeholder="Search Order ID"></th>
+            <th><input type="text" id="filterCustomer" placeholder="Search Customer"></th>
+            <th><input type="text" id="filterProduct" placeholder="Search Product"></th>
+            <th><input type="text" id="filterAmount" placeholder="Search Amount"></th>
+            <th>
+              <div class="custom-select">
+                <select id="filterStatus">
+                  <option value="">All Statuses</option>
+                  <option value="Completed">Completed</option>
+                  <option value="Pending">Pending</option>
+                  <option value="Shipped">Shipped</option>
+                </select>
+              </div>
+            </th>
+            <th>
+              <div class="date-range">
+                <input type="date" id="filterDateFrom" placeholder="From">
+                <input type="date" id="filterDateTo" placeholder="To">
+              </div>
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>#12345</td>
+            <td>John Doe</td>
+            <td>Widget A</td>
+            <td>$100</td>
+            <td>Completed</td>
+            <td>2023-10-01</td>
+          </tr>
+          <tr>
+            <td>#12346</td>
+            <td>Jane Smith</td>
+            <td>Widget B</td>
+            <td>$150</td>
+            <td>Pending</td>
+            <td>2023-10-02</td>
+          </tr>
+          <tr>
+            <td>#12347</td>
+            <td>Bob Johnson</td>
+            <td>Widget C</td>
+            <td>$200</td>
+            <td>Shipped</td>
+            <td>2023-10-03</td>
+          </tr>
+          <tr>
+            <td>#12348</td>
+            <td>Alice Brown</td>
+            <td>Widget D</td>
+            <td>$75</td>
+            <td>Completed</td>
+            <td>2023-10-04</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </template>
+
+  <!-- Shared layout logic -->
+  <script src="js/layout.js"></script>
+
+  <!-- Optional: dashboard-only logic -->
+  <script src="js/dashboard.js"></script>
+</body>
+
+</html>

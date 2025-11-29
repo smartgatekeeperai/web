@@ -1,0 +1,55 @@
+﻿<!-- public/drivers.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Drivers</title>
+
+  <link
+    rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
+  />
+
+  <link rel="stylesheet" href="/css/layout.css" />
+  <link rel="stylesheet" href="/css/drivers.css" />
+</head>
+<body data-page="drivers">
+  <div id="app"></div>
+
+  <template id="page-content">
+    <h2>Drivers</h2>
+    <p>List of registered drivers will go here.</p>
+
+    <div class="table-container">
+      <table>
+        <thead>
+          <tr>
+            <th>Driver ID</th>
+            <th>Name</th>
+            <th>Plate Number</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>D-001</td>
+            <td>Juan Dela Cruz</td>
+            <td>ABC1234</td>
+            <td>Active</td>
+          </tr>
+          <tr>
+            <td>D-002</td>
+            <td>Maria Santos</td>
+            <td>XYZ9876</td>
+            <td>Inactive</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </template>
+
+  <script src="js/layout.js"></script>
+  <script src="js/drivers.js"></script>
+</body>
+</html>

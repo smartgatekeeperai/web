@@ -7,6 +7,12 @@ import Groq from 'groq-sdk';
 import { imageSize } from 'image-size';
 import pkg from 'pg';
 
+// NEW: path + __dirname resolution for ESM
+import path from 'path';
+import { fileURLToPath } from 'url';
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
 dotenv.config();
 
 const { Pool } = pkg;
@@ -263,6 +269,65 @@ async function groqPlateDetect(groqClient, imageBuffer, contentType) {
 }
 
 // ----------------------------------------------------
+// Admin Dashboard Routes (HTML pages in /public)
+// ----------------------------------------------------
+const publicDir = path.join(__dirname, 'public');
+
+// Root → redirect to /dashboard
+app.get('/', (req, res) => {
+  return res.redirect('/dashboard');
+});
+
+// Dashboard (main admin page, using index.html)
+app.get('/dashboard', (req, res) => {
+  return res.sendFile(path.join(publicDir, 'index.html'));
+});
+
+// Users page
+app.get('/users', (req, res) => {
+  return res.sendFile(path.join(publicDir, 'users.html'));
+});
+
+// Drivers page
+app.get('/drivers', (req, res) => {
+  return res.sendFile(path.join(publicDir, 'drivers.html'));
+});
+
+// ID Category page
+app.get('/id-category', (req, res) => {
+  return res.sendFile(path.join(publicDir, 'id-category.html'));
+});
+
+// Logs page
+app.get('/logs', (req, res) => {
+  return res.sendFile(path.join(publicDir, 'logs.html'));
+});
+
+// Role page
+app.get('/role', (req, res) => {
+  return res.sendFile(path.join(publicDir, 'role.html'));
+});
+
+// System Config page
+app.get('/system-config', (req, res) => {
+  return res.sendFile(path.join(publicDir, 'system-config.html'));
+});
+
+// (Optional) Camera page if you have public/camera.html
+app.get('/camera', (req, res) => {
+  return res.sendFile(path.join(publicDir, 'camera.html'));
+});
+
+// ----------------------------------------------------
+// Static Web Server for /public assets (CSS, JS, etc.)
+// ----------------------------------------------------
+app.use(express.static(publicDir));
+// Examples after this:
+//   /css/dashboard.css       → public/css/dashboard.css
+//   /scs/user.css            → public/scs/user.css
+//   /js/users.js             → public/js/users.js
+
+// ----------------------------------------------------
 // Route: POST /detect
 //   - field name: "frame"   (matches Ionic code)
 //   - query param: stream_id
@@ -400,18 +465,15 @@ app.post('/detect', upload.single('frame'), async (req, res) => {
 });
 
 // ----------------------------------------------------
-// Root endpoint
-// ----------------------------------------------------
-app.get('/', (req, res) => {
-  res.json({
-    status: 'ok',
-    service: 'Groq OCR Detect API (Node.js) with BBox + DB-based API key rotation',
-  });
-});
-
-// ----------------------------------------------------
 // Start server
 // ----------------------------------------------------
 app.listen(PORT, () => {
   console.log(`🚀 Groq OCR server running on http://0.0.0.0:${PORT}`);
+  console.log(`🔐 Admin dashboard: http://localhost:${PORT}/dashboard`);
+  console.log(`👤 Users:           http://localhost:${PORT}/users`);
+  console.log(`🚗 Drivers:         http://localhost:${PORT}/drivers`);
+  console.log(`🆔 ID Category:     http://localhost:${PORT}/id-category`);
+  console.log(`📜 Logs:            http://localhost:${PORT}/logs`);
+  console.log(`🛡️ Role:            http://localhost:${PORT}/role`);
+  console.log(`⚙️ System Config:   http://localhost:${PORT}/system-config`);
 });
