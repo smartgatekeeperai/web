@@ -1,7 +1,9 @@
 |-- .env
 |-- .gitignore
+|-- controller.js
 |-- index.js
 |-- LICENSE
+|-- nodemon.json
 |-- package-lock.json
 |-- package.json
 |-- public
@@ -16,22 +18,26 @@
         |-- role.css
         |-- system-config.css
         |-- user.css
+        |-- vehicles.css
     |-- drivers.html
-    |-- id-category.html
+    |-- identification-types.html
     |-- index.html
     |-- js
         |-- camera.js
         |-- dashboard.js
         |-- drivers.js
-        |-- id-category.js
+        |-- identification-types.js
         |-- layout.js
         |-- logs.js
         |-- role.js
         |-- system-config.js
         |-- user.js
+        |-- vehicles.js
     |-- logs.html
     |-- role.html
     |-- system-config.html
     |-- user.html
+    |-- vehicles.html
 |-- README.md
+|-- routes.js
 |-- vercel.json

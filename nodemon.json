@@ -1,0 +1,8 @@
+{
+  "watch": ["index.js", "routes.js", "controller.js", "public"],
+  "ext": "*",
+  "ignore": ["node_modules", ".vscode"],
+  "env": {
+    "NODE_ENV": "development"
+  }
+}

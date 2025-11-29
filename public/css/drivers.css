@@ -1,2 +1,75 @@
 ﻿/* Placeholder for drivers.css */
 
+/* public/css/drivers.css */
+
+.table-container table th:first-child,
+.table-container table th:last-child {
+  text-align: center;
+}
+
+.table-container table td:first-child,
+.table-container table td:last-child {
+  text-align: center;
+}
+
+/* Small icon buttons for edit/delete */
+.table-icon-btn {
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font-size: 14px;
+  padding: 4px 8px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.table-icon-btn .fa {
+  pointer-events: none;
+}
+
+.table-icon-btn.btn-edit {
+  color: #2980b9;
+}
+
+.table-icon-btn.btn-edit:hover {
+  background-color: rgba(41, 128, 185, 0.08);
+}
+
+.table-icon-btn.btn-delete {
+  color: #e74c3c;
+}
+
+.table-icon-btn.btn-delete:hover {
+  background-color: rgba(231, 76, 60, 0.08);
+}
+
+/* Modal form layout reused for drivers */
+.modal-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.modal-form label {
+  display: flex;
+  flex-direction: column;
+  font-size: 13px;
+  color: #2c3e50;
+  gap: 4px;
+}
+
+.modal-form input,
+.modal-form select {
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid #d0d7de;
+  font-size: 14px;
+}
+
+.modal-form input:focus,
+.modal-form select:focus {
+  outline: none;
+  border-color: #3498db;
+}
