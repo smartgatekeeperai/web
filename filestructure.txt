@@ -34,3 +34,4 @@
     |-- system-config.html
     |-- user.html
 |-- README.md
+|-- vercel.json
