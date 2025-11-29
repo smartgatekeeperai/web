@@ -12,9 +12,8 @@ import { registerRoutes } from './routes.js';
 const htmlFiles = await glob('public/*.html');
 console.log(htmlFiles);
 
-const webRoutes = htmlFiles.map((x) => {
-  return x.replace(`public\\`, '');
-});
+// ✅ cross-platform: just keep the filename (drivers.html, vehicles.html, ...)
+const webRoutes = htmlFiles.map((x) => path.basename(x));
 
 console.log(webRoutes);
 
@@ -76,16 +75,12 @@ registerRoutes(app, { pool, webRoutes, publicDir, upload });
 if (process.env.VERCEL !== '1') {
   app.listen(PORT, () => {
     console.log(`🚀 Groq OCR server running on http://0.0.0.0:${PORT}`);
-    for (const routes of webRoutes) {
-      if (routes.includes('index')) {
+    for (const file of webRoutes) {
+      const name = file.replace('.html', '');
+      if (name.includes('index')) {
         console.log(`dashboard: http://localhost:${PORT}/dashboard`);
       } else {
-        console.log(
-          `${routes.replace('.html', '')}: http://localhost:${PORT}/${routes.replace(
-            '.html',
-            ''
-          )}`
-        );
+        console.log(`${name}: http://localhost:${PORT}/${name}`);
       }
     }
   });
