@@ -7,6 +7,8 @@ import pkg from 'pg';
 import path from 'path';
 import { glob } from 'glob';
 import { registerRoutes } from './routes.js';
+import Pusher from "pusher";
+
 
 // scan public/*.html
 const htmlFiles = await glob('public/*.html');
@@ -18,6 +20,15 @@ const webRoutes = htmlFiles.map((x) => path.basename(x));
 console.log(webRoutes);
 
 dotenv.config();
+
+const pusher = new Pusher({
+    appId: process.env.PUSHER_APP_ID,
+    key: process.env.PUSHER_KEY,
+    secret: process.env.PUSHER_SECRET,
+    cluster: process.env.PUSHER_CLUSTER ?? "ap1",
+    useTLS: false
+});
+
 
 const { Pool } = pkg;
 
@@ -67,7 +78,7 @@ const publicDir = path.join(process.cwd(), 'public');
 // ----------------------------------------------------
 // Register all routes (web + API)
 // ----------------------------------------------------
-registerRoutes(app, { pool, webRoutes, publicDir, upload });
+registerRoutes(app, { pool, webRoutes, publicDir, upload, pusher });
 
 // ----------------------------------------------------
 // Local dev server (disabled on Vercel)

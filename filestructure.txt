@@ -12,7 +12,7 @@
         |-- camera.css
         |-- dashboard.css
         |-- drivers.css
-        |-- id-category.css
+        |-- identification-types.css
         |-- layout.css
         |-- logs.css
         |-- role.css
@@ -21,6 +21,14 @@
         |-- vehicles.css
     |-- drivers.html
     |-- identification-types.html
+    |-- images
+        |-- bus.png
+        |-- car.png
+        |-- motorcycle.png
+        |-- no-video.png
+        |-- pickup.png
+        |-- truck.png
+        |-- van.png
     |-- index.html
     |-- js
         |-- camera.js
@@ -29,6 +37,7 @@
         |-- identification-types.js
         |-- layout.js
         |-- logs.js
+        |-- modal.js
         |-- role.js
         |-- system-config.js
         |-- user.js
@@ -40,4 +49,5 @@
     |-- vehicles.html
 |-- README.md
 |-- routes.js
+|-- sensor_log.csv
 |-- vercel.json

@@ -160,6 +160,23 @@ body {
     overflow-y: auto;
 }
 
+#page-container {
+    display: flex;
+    flex-direction: column;
+    /* gap: 5px; */
+}
+
+.page-subtitle {
+    margin-bottom: 15px;
+}
+
+.page-controls {
+    margin-bottom: 16px;
+    display: flex;
+    justify-content: flex-end
+}
+
+
 /* ========== CARDS / TABLES (same as before) ========== */
 .stats {
     display: grid;
@@ -252,6 +269,53 @@ td {
 th {
     background-color: #f8f9fa;
     font-weight: bold;
+}
+
+.table-container table th:first-child,
+.table-container table th:last-child {
+    text-align: center;
+}
+
+.table-container table td:first-child,
+.table-container table td:last-child {
+    text-align: center;
+}
+
+/* Small icon buttons for edit/delete */
+.table-icon-btn {
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    font-size: 14px;
+    padding: 4px 8px;
+    border-radius: 999px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.table-icon-btn .fa {
+    pointer-events: none;
+}
+
+.table-icon-btn.btn-edit {
+    color: #2980b9;
+}
+
+.table-icon-btn.btn-view {
+    color: #2980b9;
+}
+
+.table-icon-btn.btn-edit:hover {
+    background-color: rgba(41, 128, 185, 0.08);
+}
+
+.table-icon-btn.btn-delete {
+    color: #e74c3c;
+}
+
+.table-icon-btn.btn-delete:hover {
+    background-color: rgba(231, 76, 60, 0.08);
 }
 
 .filters th {
@@ -347,17 +411,14 @@ th {
 }
 
 .modal-container {
-    background-color: #ffffff;
     width: 100%;
     max-width: 480px;
     max-height: 90vh;
     border-radius: 12px;
     box-shadow: 0 22px 45px rgba(15, 23, 42, 0.25);
-    overflow: hidden;
     display: flex;
     flex-direction: column;
     border-top: 4px solid #3498db;
-    /* default accent */
 }
 
 /* Variants */
@@ -383,6 +444,12 @@ th {
     display: flex;
     align-items: center;
     justify-content: space-between;
+    position: sticky;
+    top: 0;
+    width: 100%;
+    background: #fff;
+    border-top-left-radius: 12px;
+    border-top-right-radius: 12px;
 }
 
 .modal-title {
@@ -409,7 +476,9 @@ th {
     padding: 18px;
     font-size: 14px;
     color: #34495e;
-    overflow-y: auto;
+    overflow: auto;
+    background-color: #ffffff;
+    /* let dropdown overflow inside modal */
 }
 
 .modal-body p {
@@ -422,6 +491,12 @@ th {
     justify-content: flex-end;
     gap: 8px;
     border-top: 1px solid #ecf0f1;
+    position: sticky;
+    bottom: 0;
+    width: 100%;
+    background: #fff;
+    border-bottom-left-radius: 12px;
+    border-bottom-right-radius: 12px;
 }
 
 .modal-btn {
@@ -466,17 +541,19 @@ th {
 .modal-form {
     display: flex;
     flex-direction: column;
-    row-gap: 10px;
+    gap: 12px;
 }
 
 .modal-form label {
     display: flex;
     flex-direction: column;
-    row-gap: 4px;
+    font-size: 13px;
+    color: #2c3e50;
+    gap: 4px;
 }
 
 .modal-form label.hidden {
-    display: none!important;
+    display: none !important;
 }
 
 .modal-form label input,
@@ -494,7 +571,62 @@ th {
     outline: none;
     border-color: #3498db;
 }
-   
+
+.modal-form input,
+.modal-form select {
+    padding: 8px 10px;
+    border-radius: 8px;
+    border: 1px solid #d0d7de;
+    font-size: 14px;
+}
+
+.modal-form input:focus,
+.modal-form select:focus {
+    outline: none;
+    border-color: #3498db;
+}
+
+/* Autocomplete styles for vehicle brand */
+/* Autocomplete styles (works above modal / body-level) */
+.autocomplete-wrapper {
+    position: relative;
+    /* keeps markup simple; actual positioning is fixed */
+}
+
+.autocomplete-wrapper input {
+    width: 100%;
+}
+
+.autocomplete-list {
+    position: fixed;
+    /* relative to viewport, not modal */
+    max-height: 180px;
+    overflow-y: auto;
+    background: #ffffff;
+    border: 1px solid #d0d7de;
+    border-radius: 0 0 8px 8px;
+    box-shadow: 0 4px 10px rgba(15, 23, 42, 0.12);
+    z-index: 2000;
+    /* higher than .modal-backdrop (1100) */
+    display: none;
+}
+
+/* When dropdown is rendered above the input */
+.autocomplete-list.above {
+    border-radius: 8px 8px 0 0;
+}
+
+.autocomplete-item {
+    padding: 8px 10px;
+    font-size: 14px;
+    cursor: pointer;
+}
+
+.autocomplete-item:hover {
+    background-color: #f2f4f7;
+}
+
+
 
 /* ========== DESKTOP ========== */
 

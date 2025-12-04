@@ -1,134 +1,1698 @@
-﻿<!-- public/index.html -->
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Dashboard</title>
-
-  <!-- Font Awesome for icons -->
+  <title>Smart Gate Keeper AI - Dashboard</title>
+  <!-- Font Awesome CDN for icons -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: "Arial", sans-serif;
+    }
 
-  <!-- Shared layout styles -->
-  <link rel="stylesheet" href="css/layout.css" />
+    body {
+      display: flex;
+      height: 100vh;
+      background-color: #f4f4f4;
+    }
 
-  <!-- Optional: extra dashboard-only styles -->
-  <link rel="stylesheet" href="css/dashboard.css" />
+    .sidebar {
+      width: 260px;
+      background-color: #2c3e50;
+      color: white;
+      position: fixed;
+      top: 0;
+      left: 0;
+      height: 100%;
+      transform: translateX(0);
+      transition: transform 0.3s ease;
+      z-index: 1000;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .sidebar.closed {
+      transform: translateX(-260px);
+    }
+
+    .sidebar .logo {
+      padding: 20px;
+      font-size: 24px;
+      font-weight: bold;
+      border-bottom: 1px solid #34495e;
+    }
+
+    .sidebar ul {
+      list-style: none;
+      padding: 20px 0;
+      flex-grow: 1;
+    }
+
+    .sidebar ul li {
+      padding: 15px 20px;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+
+    .sidebar ul li:hover {
+      background-color: #34495e;
+    }
+
+    .sidebar ul li.active {
+      background-color: #3498db;
+    }
+
+    .user-profile {
+      padding: 20px;
+      border-top: 1px solid #34495e;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+
+    .user-profile:hover {
+      background-color: #34495e;
+    }
+
+    .user-profile .avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background-color: #3498db;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-size: 18px;
+    }
+
+    .user-profile .user-info {
+      flex: 1;
+    }
+
+    .user-profile .user-name {
+      font-weight: bold;
+      margin: 0;
+    }
+
+    .user-profile .user-role {
+      color: #bdc3c7;
+      font-size: 14px;
+      margin: 0;
+    }
+
+    .user-profile .profile-link {
+      color: #3498db;
+      text-decoration: none;
+      font-size: 14px;
+    }
+
+    .user-profile .profile-link:hover {
+      text-decoration: underline;
+    }
+
+    .main-content {
+      flex: 1;
+      margin-left: 260px;
+      transition: margin-left 0.3s ease;
+    }
+
+    .main-content.shifted {
+      margin-left: 0;
+    }
+
+    .top-bar {
+      background-color: white;
+      padding: 15px 20px;
+      display: flex;
+      align-items: center;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    .hamburger {
+      font-size: 24px;
+      cursor: pointer;
+      margin-right: 20px;
+    }
+
+    .page-title {
+      font-size: 24px;
+      font-weight: bold;
+    }
+
+    .content {
+      padding: 20px;
+    }
+
+    /* ---------- STATS ---------- */
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 20px;
+      margin-bottom: 30px;
+    }
+
+    .stat-card {
+      background-color: white;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      text-align: center;
+      position: relative;
+    }
+
+    .stat-card .icon {
+      font-size: 40px;
+      color: #3498db;
+      margin-bottom: 10px;
+    }
+
+    .stat-card h3 {
+      font-size: 28px;
+      margin-bottom: 10px;
+    }
+
+    .stat-card p {
+      color: #7f8c8d;
+    }
+
+    /* ---------- WIDGETS GRID ---------- */
+    .widgets-section {
+      display: grid;
+      grid-template-columns: 2fr 1.3fr;
+      gap: 20px;
+      margin-bottom: 30px;
+      align-items: stretch;
+    }
+
+    .widget {
+      background-color: white;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .widget h4 {
+      margin-bottom: 15px;
+      font-size: 18px;
+      font-weight: bold;
+    }
+
+    /* ---------- QUICK CAMERA PREVIEW ---------- */
+    .camera-previews {
+      display: grid;
+      gap: 14px;
+      grid-template-columns: 1fr;
+      height: 100%;
+    }
+
+    .camera-card {
+      background-color: #f9fafb;
+      border-radius: 8px;
+      padding: 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      border: 1px solid #e5e7eb;
+    }
+
+    .camera-thumb {
+      position: relative;
+      border-radius: 6px;
+      overflow: hidden;
+      height: 100px;
+      background-color: #e5e7eb;
+      height: 100%;
+    }
+
+    .camera-thumb img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    .camera-label-chip {
+      position: absolute;
+      left: 8px;
+      top: 8px;
+      background: rgba(17, 24, 39, 0.85);
+      color: #f9fafb;
+      font-size: 11px;
+      padding: 4px 8px;
+      border-radius: 999px;
+    }
+
+    .camera-meta {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      font-size: 13px;
+    }
+
+    .camera-name {
+      font-weight: 600;
+      color: #111827;
+    }
+
+    .camera-status-pill {
+      padding: 3px 10px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 600;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      border: 1px solid transparent;
+    }
+
+    .camera-status-pill.online {
+      background-color: #ecfdf3;
+      color: #166534;
+      border-color: #bbf7d0;
+    }
+
+    .camera-status-pill.offline {
+      background-color: #fef2f2;
+      color: #991b1b;
+      border-color: #fecaca;
+    }
+
+    .camera-status-pill i {
+      font-size: 8px;
+    }
+
+    /* ---------- GATE STATUS (FLOOR + DOOR) ---------- */
+    .gate-subtitle {
+      font-size: 12px;
+      color: #6b7280;
+    }
+
+    .gate-map {
+      margin-top: 8px;
+    }
+
+    .gate-map-body {
+      display: flex;
+      gap: 18px;
+      align-items: stretch;
+    }
+
+    .gate-visual {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .gate-area {
+      background: #4c4f55;
+      border-radius: 18px;
+      height: 220px;
+      position: relative;
+      padding: 18px 18px 28px;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-start;
+      align-items: center;
+      overflow: hidden;
+      min-width: 175px !important;
+    }
+
+    .gate-car-wrapper {
+      flex: 1;
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+      width: 100%;
+      pointer-events: none;
+    }
+
+    .gate-vehicle-img {
+      max-height: 140px;
+      width: auto;
+      object-fit: contain;
+      filter: drop-shadow(0 12px 18px rgba(0, 0, 0, 0.45));
+      top: -45px;
+      position: absolute;
+      transform: scale(1.5);
+      transition: top 0.4s ease-out;
+    }
+
+    .gate-vehicle-img:not([src]),
+    .gate-vehicle-img[src=""],
+    .gate-vehicle-img[src=" "] {
+      top: -100px;
+    }
+
+
+    .gate-status-band {
+      position: absolute;
+      left: 18px;
+      right: 18px;
+      bottom: 24px;
+      height: 64px;
+      border-radius: 18px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      font-size: 18px;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: #ffffff;
+    }
+
+    .gate-status-band.registered {
+      background: #15803d;
+      box-shadow: 0 0 30px rgba(34, 197, 94, 0.75);
+    }
+
+    .gate-status-band.not-registered {
+      background: #dc2626;
+      box-shadow: 0 0 30px rgba(248, 113, 113, 0.75);
+    }
+
+    .gate-status-band:not(.registered):not(.not-registered) {
+      background: #6b7280;
+      box-shadow: none;
+    }
+
+    .gate-status-label {
+      flex: 0 0 auto;
+      white-space: revert;
+      display: block;
+      width: -webkit-fill-available;
+      height: auto;
+      text-align: center;
+    }
+
+    .gate-info {
+      flex: 1;
+      background: #f9fafb;
+      border-radius: 16px;
+      padding: 16px 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .gate-info-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-top: 4px;
+    }
+
+    .gate-info-item-label {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+      color: #6b7280;
+    }
+
+    .gate-info-item-value {
+      font-size: 14px;
+      font-weight: 600;
+      color: #111827;
+    }
+
+    .gate-info-meta {
+      font-size: 12px;
+      color: #6b7280;
+      margin-top: 8px;
+    }
+
+    /* ---------- CHART / PEAK VEHICLE FLOW ---------- */
+    .chart-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 12px;
+    }
+
+    .chart-header h4 {
+      margin: 0;
+    }
+
+    .chart-filters {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .chip-group {
+      display: inline-flex;
+      background: #f3f4f6;
+      border-radius: 999px;
+      padding: 3px;
+      gap: 4px;
+    }
+
+    .chip-group .chip {
+      border: none;
+      background: transparent;
+      border-radius: 999px;
+      padding: 6px 12px;
+      font-size: 12px;
+      cursor: pointer;
+      color: #6b7280;
+      transition: background-color 0.2s ease, color 0.2s ease;
+      white-space: nowrap;
+    }
+
+    .chip-group .chip.active {
+      background-color: #111827;
+      color: #ffffff;
+    }
+
+    .chart-range-select {
+      padding: 6px 10px;
+      font-size: 12px;
+      border-radius: 999px;
+      border: 1px solid #d1d5db;
+      background-color: #ffffff;
+      color: #374151;
+    }
+
+    .chart-range-select:focus {
+      border-color: #3498db;
+      outline: none;
+    }
+
+    .peak-hours {
+      width: 100%;
+      height: 300px;
+      position: relative;
+      background-color: #f8f9fa;
+      border-radius: 12px;
+      padding: 16px;
+      box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.03);
+    }
+
+    .peak-hours canvas {
+      width: 100% !important;
+      height: 100% !important;
+    }
+
+    .chart-legend {
+      display: flex;
+      justify-content: flex-start;
+      gap: 20px;
+      margin-top: 10px;
+      flex-wrap: wrap;
+      font-size: 12px;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 12px;
+    }
+
+    .legend-color {
+      width: 12px;
+      height: 12px;
+      border-radius: 2px;
+    }
+
+    /* ---------- LIVE ACTIVITY FEED ---------- */
+    .activity-feed {
+      background-color: white;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      overflow: hidden;
+      margin-top: 24px;
+      margin-bottom: 24px;
+    }
+
+    .activity-header {
+      padding: 12px 16px;
+      border-bottom: 1px solid #e5e7eb;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      background-color: #f9fafb;
+    }
+
+    .activity-header-left {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .activity-header-title {
+      font-size: 16px;
+      font-weight: 700;
+      color: #111827;
+    }
+
+    .activity-header-sub {
+      font-size: 12px;
+      color: #6b7280;
+    }
+
+    .activity-header-right {
+      font-size: 11px;
+      color: #6b7280;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .activity-mode-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      border-radius: 999px;
+      background: #eef2ff;
+      color: #4b5563;
+    }
+
+    .live-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 999px;
+      background: #d1d5db;
+    }
+
+    .live-dot.on {
+      background: #22c55e;
+    }
+
+    .activity-filter-bar {
+      padding: 8px 16px;
+      border-bottom: 1px solid #e5e7eb;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px 12px;
+      align-items: center;
+      justify-content: space-between;
+      background: #ffffff;
+    }
+
+    .activity-history-filters {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    #activityHistoryFilters {
+      display: none;
+    }
+
+    .activity-list {
+      max-height: 400px;
+      overflow-y: auto;
+    }
+
+    .activity-item {
+      display: grid;
+      grid-template-columns: 80px minmax(0, 1fr) auto;
+      gap: 12px;
+      padding: 12px 16px;
+      border-bottom: 1px solid #f3f4f6;
+      align-items: center;
+    }
+
+    .activity-thumbnail {
+      width: 80px;
+      height: 50px;
+      background-color: #e5e7eb;
+      border-radius: 6px;
+      flex-shrink: 0;
+      overflow: hidden;
+    }
+
+    .activity-thumbnail img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    .activity-details {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      font-size: 13px;
+    }
+
+    .activity-main-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      align-items: center;
+    }
+
+    .badge-plate {
+      font-size: 12px;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 999px;
+      background-color: #eff6ff;
+      color: #1d4ed8;
+    }
+
+    .badge-status {
+      font-size: 11px;
+      padding: 3px 8px;
+      border-radius: 999px;
+      font-weight: 600;
+    }
+
+    .badge-status.registered {
+      background-color: #ecfdf3;
+      color: #15803d;
+    }
+
+    .badge-status.not-registered {
+      background-color: #fef2f2;
+      color: #b91c1c;
+    }
+
+    .activity-sub-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      color: #6b7280;
+    }
+
+    .activity-sub-row span {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .activity-meta {
+      font-size: 12px;
+      color: #6b7280;
+    }
+
+    .activity-meta strong {
+      color: #111827;
+    }
+
+    .activity-confidence-badge {
+      font-size: 12px;
+      padding: 4px 10px;
+      border-radius: 999px;
+      font-weight: 600;
+      white-space: nowrap;
+      background-color: #ecfdf3;
+      color: #15803d;
+    }
+
+    .activity-confidence-badge.not-registered {
+      background-color: #fef2f2;
+      color: #b91c1c;
+    }
+
+    /* ---------- SEARCH ---------- */
+    .search-container {
+      display: flex;
+      justify-content: flex-start;
+    }
+
+    .search-bar {
+      position: relative;
+      width: 300px;
+    }
+
+    .search-bar input {
+      width: 100%;
+      padding: 10px 40px 10px 15px;
+      border: 1px solid #ddd;
+      border-radius: 25px;
+      font-size: 16px;
+      background-color: white;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      transition: border-color 0.3s ease;
+    }
+
+    .search-bar input:focus {
+      outline: none;
+      border-color: #3498db;
+    }
+
+    .search-bar .search-icon {
+      position: absolute;
+      right: 15px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: #7f8c8d;
+      font-size: 18px;
+    }
+
+    .overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.5);
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.3s ease, visibility 0.3s ease;
+      z-index: 999;
+    }
+
+    .overlay.active {
+      opacity: 1;
+      visibility: visible;
+    }
+
+    /* ---------- RESPONSIVE ---------- */
+    @media (min-width: 640px) {
+      .camera-previews {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+
+    @media (max-width: 1024px) {
+      .stats {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .widgets-section {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 768px) {
+      .sidebar {
+        transform: translateX(-260px);
+      }
+
+      .sidebar.open {
+        transform: translateX(0);
+      }
+
+      .main-content {
+        margin-left: 0;
+      }
+
+      .stats {
+        grid-template-columns: 1fr;
+      }
+
+      .widgets-section {
+        grid-template-columns: 1fr;
+      }
+
+      .search-bar {
+        width: 100%;
+      }
+
+      .chart-header {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+
+      .chart-filters {
+        width: 100%;
+        justify-content: space-between;
+      }
+
+      .activity-item {
+        grid-template-columns: minmax(0, 1fr);
+      }
+
+      .activity-thumbnail {
+        width: 100%;
+      }
+
+      .gate-map-body {
+        flex-direction: column;
+      }
+    }
+  </style>
 </head>
 
-<body data-page="dashboard">
-  <!-- Shared layout will render into this -->
-  <div id="app"></div>
-
-  <!-- This template is the *page-specific* content only -->
-  <template id="page-content">
-    <div class="stats">
-      <div class="stat-card">
-        <i class="fas fa-dollar-sign icon"></i>
-        <h3>$12,345</h3>
-        <p>Total Sales</p>
+<body>
+  <div class="sidebar" id="sidebar">
+    <div class="logo">Smart Gate Keeper AI</div>
+    <ul>
+      <li class="active" data-page="dashboard">Dashboard</li>
+      <li data-page="gates">Gates</li>
+      <li data-page="cameras">Cameras</li>
+      <li data-page="reports">Reports</li>
+      <li data-page="settings">Settings</li>
+    </ul>
+    <div class="user-profile">
+      <div class="avatar">
+        <i class="fas fa-user"></i>
       </div>
-      <div class="stat-card">
-        <i class="fas fa-clipboard-list icon"></i>
-        <h3>1,234</h3>
-        <p>Total Orders</p>
+      <div class="user-info">
+        <p class="user-name">Admin User</p>
+        <p class="user-role">Administrator</p>
       </div>
-      <div class="stat-card">
-        <i class="fas fa-users icon"></i>
-        <h3>567</h3>
-        <p>Total Customers</p>
-      </div>
-      <div class="stat-card">
-        <i class="fas fa-percentage icon"></i>
-        <h3>89%</h3>
-        <p>Conversion Rate</p>
-      </div>
+      <a href="#" class="profile-link">Settings</a>
     </div>
-    <div class="search-container">
-      <div class="search-bar">
-        <input type="text" id="searchInput" placeholder="Search orders...">
-        <i class="fas fa-search search-icon"></i>
-      </div>
+  </div>
+
+  <div class="main-content" id="main-content">
+    <div class="top-bar">
+      <div class="hamburger" id="hamburger">&#9776;</div>
+      <div class="page-title">Gate Activity Dashboard</div>
     </div>
 
-    <div class="table-container">
-      <table>
-        <thead>
-          <tr>
-            <th>Order ID</th>
-            <th>Customer</th>
-            <th>Product</th>
-            <th>Amount</th>
-            <th>Status</th>
-            <th>Order Created</th>
-          </tr>
-          <tr class="filters">
-            <th><input type="text" id="filterOrderID" placeholder="Search Order ID"></th>
-            <th><input type="text" id="filterCustomer" placeholder="Search Customer"></th>
-            <th><input type="text" id="filterProduct" placeholder="Search Product"></th>
-            <th><input type="text" id="filterAmount" placeholder="Search Amount"></th>
-            <th>
-              <div class="custom-select">
-                <select id="filterStatus">
-                  <option value="">All Statuses</option>
-                  <option value="Completed">Completed</option>
-                  <option value="Pending">Pending</option>
-                  <option value="Shipped">Shipped</option>
-                </select>
+    <div class="content">
+      <!-- STATS -->
+      <div class="stats">
+        <div class="stat-card">
+          <i class="fas fa-car icon"></i>
+          <h3 id="totalVehicles">1,234</h3>
+          <p>Total Vehicles Today</p>
+        </div>
+        <div class="stat-card">
+          <i class="fas fa-chart-line icon"></i>
+          <h3 id="avgVehiclesDaily">980</h3>
+          <p>Average Vehicles Daily</p>
+        </div>
+        <div class="stat-card">
+          <i class="fas fa-id-card icon"></i>
+          <h3 id="registeredVehicles">3,560</h3>
+          <p>Registered Vehicles</p>
+        </div>
+        <div class="stat-card">
+          <i class="fas fa-clock icon"></i>
+          <h3>8-10 AM</h3>
+          <p>Peak Hours</p>
+        </div>
+      </div>
+
+      <!-- QUICK CAMERA PREVIEW + GATE STATUS -->
+      <div class="widgets-section">
+        <div class="widget">
+          <h4>Quick Camera Preview</h4>
+          <div class="camera-previews">
+            <div class="camera-card">
+              <div class="camera-thumb">
+                <img src="images/no-video.png" alt="Front Camera" />
+                <span class="camera-label-chip">Front camera</span>
               </div>
-            </th>
-            <th>
-              <div class="date-range">
-                <input type="date" id="filterDateFrom" placeholder="From">
-                <input type="date" id="filterDateTo" placeholder="To">
+              <div class="camera-meta">
+                <span class="camera-name">Front camera</span>
+                <span class="camera-status-pill online">
+                  <i class="fas fa-circle"></i> Online
+                </span>
               </div>
-            </th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td>#12345</td>
-            <td>John Doe</td>
-            <td>Widget A</td>
-            <td>$100</td>
-            <td>Completed</td>
-            <td>2023-10-01</td>
-          </tr>
-          <tr>
-            <td>#12346</td>
-            <td>Jane Smith</td>
-            <td>Widget B</td>
-            <td>$150</td>
-            <td>Pending</td>
-            <td>2023-10-02</td>
-          </tr>
-          <tr>
-            <td>#12347</td>
-            <td>Bob Johnson</td>
-            <td>Widget C</td>
-            <td>$200</td>
-            <td>Shipped</td>
-            <td>2023-10-03</td>
-          </tr>
-          <tr>
-            <td>#12348</td>
-            <td>Alice Brown</td>
-            <td>Widget D</td>
-            <td>$75</td>
-            <td>Completed</td>
-            <td>2023-10-04</td>
-          </tr>
-        </tbody>
-      </table>
+            </div>
+
+            <div class="camera-card">
+              <div class="camera-thumb">
+                <img src="images/no-video.png" alt="Back Camera" />
+                <span class="camera-label-chip">Back camera</span>
+              </div>
+              <div class="camera-meta">
+                <span class="camera-name">Back camera</span>
+                <span class="camera-status-pill online">
+                  <i class="fas fa-circle"></i> Online
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="widget">
+          <h4>Gate Status</h4>
+          <div class="gate-label" style="margin-bottom: 8px;">
+            <span class="gate-subtitle">
+              Gate registration check
+            </span>
+          </div>
+
+          <div class="gate-map">
+            <div class="gate-map-body">
+              <!-- LEFT: flat floor + car image + gate status band -->
+              <div class="gate-visual">
+                <div class="gate-area">
+                  <div class="gate-car-wrapper">
+                    <!-- swap src with your actual top-view vehicle image -->
+                    <img class="gate-vehicle-img" alt="Current vehicle top view" />
+                  </div>
+
+                  <!-- Gate registration status:
+                       use .registered or .not-registered and change text -->
+                  <div class="gate-status-band">
+                    <span class="gate-status-label"></span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- RIGHT: vehicle / driver details + gate meta -->
+              <div class="gate-info">
+                <ul class="gate-info-list">
+                  <li>
+                    <div class="gate-info-item-label">Plate number</div>
+                    <div class="gate-info-item-value"></div>
+                  </li>
+                  <li>
+                    <div class="gate-info-item-label">Driver</div>
+                    <div class="gate-info-item-value"></div>
+                  </li>
+                  <li>
+                    <div class="gate-info-item-label">Type</div>
+                    <div class="gate-info-item-value"></div>
+                  </li>
+                  <li>
+                    <div class="gate-info-item-label">Brand</div>
+                    <div class="gate-info-item-value"></div>
+                  </li>
+                  <li>
+                    <div class="gate-info-item-label">model</div>
+                    <div class="gate-info-item-value"></div>
+                  </li>
+                </ul>
+
+                <!-- <div class="gate-info-meta">
+                  Gate status: <strong>Registered</strong> · Last check:
+                  <strong>12s ago</strong>
+                </div> -->
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SEARCH + LIVE ACTIVITY FEED -->
+      <div class="search-container">
+        <div class="search-bar">
+          <input type="text" id="searchInput" placeholder="Search activity (plate, driver, vehicle type)..." />
+          <i class="fas fa-search search-icon"></i>
+        </div>
+      </div>
+
+      <div class="activity-feed">
+        <div class="activity-header">
+          <div class="activity-header-left">
+            <span class="activity-header-title">Live Activity Feed</span>
+            <span class="activity-header-sub">Real-time registration checks from gate</span>
+          </div>
+          <div class="activity-header-right">
+            <span class="activity-mode-pill" id="activityModePill">
+              <span class="live-dot on" id="liveDot"></span>
+              <span id="activityModeLabel">Live · Last 20 events</span>
+            </span>
+          </div>
+        </div>
+
+        <!-- Mode + history filters -->
+        <div class="activity-filter-bar">
+          <div class="chip-group" id="activityModeChips">
+            <button class="chip active" data-mode="live">Live</button>
+            <button class="chip" data-mode="history">History</button>
+          </div>
+          <div class="activity-history-filters" id="activityHistoryFilters">
+            <div class="chip-group" id="activityResolutionChips">
+              <button class="chip active" data-resolution="hour">Hourly</button>
+              <button class="chip" data-resolution="day">Daily</button>
+              <button class="chip" data-resolution="week">Weekly</button>
+            </div>
+            <select id="activityRangeSelect" class="chart-range-select"></select>
+          </div>
+        </div>
+
+        <div class="activity-list" id="activityList"></div>
+      </div>
+
+      <!-- PEAK VEHICLE FLOW (Chart.js) -->
+      <div class="widget">
+        <div class="chart-header">
+          <h4>Peak Vehicle Flow</h4>
+          <div class="chart-filters">
+            <div class="chip-group" id="resolutionChips">
+              <button class="chip active" data-resolution="hour">Hourly</button>
+              <button class="chip" data-resolution="day">Daily</button>
+              <button class="chip" data-resolution="week">Weekly</button>
+            </div>
+            <select id="rangeSelect" class="chart-range-select"></select>
+          </div>
+        </div>
+
+        <div class="peak-hours">
+          <canvas id="peakHoursChart"></canvas>
+        </div>
+
+        <div class="chart-legend" id="chartLegend"></div>
+      </div>
     </div>
-  </template>
+  </div>
 
-  <!-- Shared layout logic -->
-  <script src="js/layout.js"></script>
+  <div class="overlay" id="overlay"></div>
 
-  <!-- Optional: dashboard-only logic -->
-  <script src="js/dashboard.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      /* ------------------------------------------------
+       * Shared time resolution config
+       * ------------------------------------------------*/
+      const RESOLUTION_CONFIG = {
+        hour: {
+          unit: "hours",
+          label: "Last",
+          ranges: [6, 12, 24],
+          labelFormatter: (range) =>
+            Array.from({ length: range }, (_, i) => {
+              const diff = range - 1 - i;
+              return diff === 0 ? "Now" : `-${diff}h`;
+            }),
+        },
+        day: {
+          unit: "days",
+          label: "Last",
+          ranges: [3, 7, 14],
+          labelFormatter: (range) =>
+            Array.from({ length: range }, (_, i) => {
+              const diff = range - 1 - i;
+              return diff === 0 ? "Today" : `-${diff}d`;
+            }),
+        },
+        week: {
+          unit: "weeks",
+          label: "Last",
+          ranges: [4, 8, 12],
+          labelFormatter: (range) =>
+            Array.from({ length: range }, (_, i) => {
+              const diff = range - 1 - i;
+              return diff === 0 ? "This week" : `-${diff}w`;
+            }),
+        },
+      };
+
+      /* ------------------------------------------------
+       * Peak Vehicle Flow (Chart.js)
+       * ------------------------------------------------*/
+      const ctx = document.getElementById("peakHoursChart").getContext("2d");
+      const legendContainer = document.getElementById("chartLegend");
+      const rangeSelect = document.getElementById("rangeSelect");
+      const chipsContainer = document.getElementById("resolutionChips");
+
+      const COLORS = {
+        cars: "rgba(52, 152, 219, 1)",
+        motorcycles: "rgba(231, 76, 60, 1)",
+        vans: "rgba(39, 174, 96, 1)",
+      };
+
+      let currentResolution = "hour";
+      let currentRange = RESOLUTION_CONFIG[currentResolution].ranges[0];
+      let chartInstance = null;
+
+      async function fetchTrafficData(resolution, range) {
+        await new Promise((resolve) => setTimeout(resolve, 250));
+        const points = range;
+
+        const makeSeries = (base, variance = 25) =>
+          Array.from({ length: points }, (_, i) => {
+            const wave = Math.sin(i / 1.3) * 15;
+            const noise = Math.random() * variance - variance / 2;
+            return Math.max(0, Math.round(base + wave + noise));
+          });
+
+        let baseCars, baseMoto, baseVans;
+        if (resolution === "hour") {
+          baseCars = 80;
+          baseMoto = 70;
+          baseVans = 50;
+        } else if (resolution === "day") {
+          baseCars = 400;
+          baseMoto = 320;
+          baseVans = 220;
+        } else {
+          baseCars = 2000;
+          baseMoto = 1600;
+          baseVans = 1100;
+        }
+
+        return {
+          labels: RESOLUTION_CONFIG[resolution].labelFormatter(range),
+          datasets: {
+            cars: makeSeries(baseCars),
+            motorcycles: makeSeries(baseMoto),
+            vans: makeSeries(baseVans),
+          },
+        };
+      }
+
+      function renderLegend() {
+        const items = [
+          { label: "Cars", color: COLORS.cars },
+          { label: "Motorcycles", color: COLORS.motorcycles },
+          { label: "Vans", color: COLORS.vans },
+        ];
+
+        legendContainer.innerHTML = items
+          .map(
+            (item) => `
+          <div class="legend-item">
+            <div class="legend-color" style="background-color: ${item.color};"></div>
+            <span>${item.label}</span>
+          </div>
+        `
+          )
+          .join("");
+      }
+
+      function updateRangeSelect() {
+        const cfg = RESOLUTION_CONFIG[currentResolution];
+        rangeSelect.innerHTML = cfg.ranges
+          .map(
+            (value) => `
+          <option value="${value}">
+            ${cfg.label} ${value} ${cfg.unit}
+          </option>
+        `
+          )
+          .join("");
+        currentRange = cfg.ranges[0];
+      }
+
+      async function loadChart() {
+        const { labels, datasets } = await fetchTrafficData(
+          currentResolution,
+          currentRange
+        );
+
+        const data = {
+          labels,
+          datasets: [
+            {
+              label: "Cars",
+              data: datasets.cars,
+              borderColor: COLORS.cars,
+              backgroundColor: "rgba(52,152,219,0.1)",
+              pointRadius: 4,
+              pointHoverRadius: 6,
+              pointBorderWidth: 2,
+              tension: 0.35,
+              fill: true,
+            },
+            {
+              label: "Motorcycles",
+              data: datasets.motorcycles,
+              borderColor: COLORS.motorcycles,
+              backgroundColor: "rgba(231,76,60,0.08)",
+              pointRadius: 4,
+              pointHoverRadius: 6,
+              pointBorderWidth: 2,
+              tension: 0.35,
+              fill: false,
+            },
+            {
+              label: "Vans",
+              data: datasets.vans,
+              borderColor: COLORS.vans,
+              backgroundColor: "rgba(39,174,96,0.08)",
+              pointRadius: 4,
+              pointHoverRadius: 6,
+              pointBorderWidth: 2,
+              tension: 0.35,
+              fill: false,
+            },
+          ],
+        };
+
+        const options = {
+          responsive: true,
+          maintainAspectRatio: false,
+          interaction: {
+            mode: "index",
+            intersect: false,
+          },
+          plugins: {
+            legend: {
+              display: false,
+            },
+            tooltip: {
+              backgroundColor: "rgba(17,24,39,0.92)",
+              padding: 10,
+              cornerRadius: 6,
+              titleFont: { size: 12, weight: "600" },
+              bodyFont: { size: 11 },
+              callbacks: {
+                label: (context) => {
+                  const value = context.parsed.y || 0;
+                  return `${context.dataset.label}: ${value} vehicles`;
+                },
+              },
+            },
+          },
+          scales: {
+            x: {
+              grid: {
+                display: false,
+              },
+              ticks: {
+                color: "#6b7280",
+                maxRotation: 0,
+              },
+            },
+            y: {
+              beginAtZero: true,
+              grid: {
+                color: "rgba(209,213,219,0.4)",
+                drawBorder: false,
+              },
+              ticks: {
+                color: "#9ca3af",
+              },
+            },
+          },
+        };
+
+        if (chartInstance) {
+          chartInstance.data = data;
+          chartInstance.options = options;
+          chartInstance.update();
+        } else {
+          chartInstance = new Chart(ctx, {
+            type: "line",
+            data,
+            options,
+          });
+        }
+      }
+
+      chipsContainer.addEventListener("click", (evt) => {
+        const chip = evt.target.closest(".chip");
+        if (!chip) return;
+        const res = chip.dataset.resolution;
+        if (!res || res === currentResolution) return;
+
+        currentResolution = res;
+
+        chipsContainer.querySelectorAll(".chip").forEach((btn) => {
+          btn.classList.toggle("active", btn === chip);
+        });
+
+        updateRangeSelect();
+        loadChart();
+      });
+
+      rangeSelect.addEventListener("change", (evt) => {
+        currentRange = Number(evt.target.value) || currentRange;
+        loadChart();
+      });
+
+      renderLegend();
+      updateRangeSelect();
+      loadChart();
+
+      /* ------------------------------------------------
+       * Live Activity Feed (Live + History filter)
+       * ------------------------------------------------*/
+      const activityList = document.getElementById("activityList");
+      const activityModeChips = document.getElementById("activityModeChips");
+      const activityHistoryFilters = document.getElementById("activityHistoryFilters");
+      const activityResolutionChips = document.getElementById("activityResolutionChips");
+      const activityRangeSelect = document.getElementById("activityRangeSelect");
+      const liveDot = document.getElementById("liveDot");
+      const activityModeLabel = document.getElementById("activityModeLabel");
+
+      let activityMode = "live";
+      let activityResolution = "hour";
+      let activityRange = RESOLUTION_CONFIG[activityResolution].ranges[0];
+
+      const STATIC_LIVE_EVENTS = [
+        {
+          plate: "ABC-123",
+          status: "registered",
+          timeLabel: "10:30 AM",
+          vehicleType: "Sedan",
+          vehicleIcon: "fa-car-side",
+          driver: "John Doe",
+          source: "Registered plate",
+          reason: "",
+          confidence: 95,
+          thumbnailUrl: "https://via.placeholder.com/80x50?text=ABC",
+        },
+        {
+          plate: "XYZ-789",
+          status: "not-registered",
+          timeLabel: "10:25 AM",
+          vehicleType: "Pickup",
+          vehicleIcon: "fa-truck-pickup",
+          driver: "",
+          source: "",
+          reason: "Plate not found in registry",
+          confidence: 87,
+          thumbnailUrl: "https://via.placeholder.com/80x50?text=XYZ",
+        },
+        {
+          plate: "DEF-456",
+          status: "registered",
+          timeLabel: "10:20 AM",
+          vehicleType: "Motorcycle",
+          vehicleIcon: "fa-motorcycle",
+          driver: "Jane Smith",
+          source: "RFID sticker",
+          reason: "",
+          confidence: 92,
+          thumbnailUrl: "https://via.placeholder.com/80x50?text=DEF",
+        },
+      ];
+
+      function renderActivity(events) {
+        activityList.innerHTML = events
+          .map((evt) => {
+            const statusClass =
+              evt.status === "registered" ? "registered" : "not-registered";
+            const statusLabel =
+              evt.status === "registered" ? "Registered" : "Not registered";
+            const metaLine =
+              evt.status === "registered"
+                ? evt.driver
+                  ? `<strong>Driver:</strong> ${evt.driver} · <strong>Source:</strong> ${evt.source}`
+                  : `<strong>Source:</strong> ${evt.source || "Plate recognition"}`
+                : `<strong>Reason:</strong> ${evt.reason || "Unknown"}`;
+            const thumb = evt.thumbnailUrl || "https://via.placeholder.com/80x50?text=Frame";
+
+            return `
+          <div class="activity-item">
+            <div class="activity-thumbnail">
+              <img src="${thumb}" alt="Captured frame for ${evt.plate}" />
+            </div>
+            <div class="activity-details">
+              <div class="activity-main-row">
+                <span class="badge-plate">${evt.plate}</span>
+              </div>
+              <div class="activity-sub-row">
+                <span><i class="far fa-clock"></i> ${evt.timeLabel}</span>
+                <span>${evt.vehicleType}</span>
+              </div>
+              <div class="activity-meta">
+                ${metaLine}
+              </div>
+            </div>
+            <div class="activity-confidence-badge ${statusClass}">${statusLabel}</div>
+          </div>
+        `;
+          })
+          .join("");
+      }
+
+      // Fake async history source
+      async function fetchActivityHistory(resolution, range) {
+        await new Promise((resolve) => setTimeout(resolve, 250));
+
+        const labels = RESOLUTION_CONFIG[resolution].labelFormatter(range);
+        const types = [
+          { type: "Sedan", icon: "fa-car-side" },
+          { type: "Pickup", icon: "fa-truck-pickup" },
+          { type: "Motorcycle", icon: "fa-motorcycle" },
+        ];
+
+        const events = labels.map((lbl, index) => {
+          const isRegistered = Math.random() > 0.25;
+          const t = types[index % types.length];
+
+          return {
+            plate: ["ABC-123", "XYZ-789", "DEF-456", "JHK-771"][index % 4],
+            status: isRegistered ? "registered" : "not-registered",
+            timeLabel: lbl,
+            vehicleType: t.type,
+            vehicleIcon: t.icon,
+            driver: isRegistered ? ["John Doe", "Jane Smith", "Alex Cruz"][index % 3] : "",
+            source: isRegistered ? "Plate recognition" : "",
+            reason: !isRegistered ? "Plate not found in registry" : "",
+            confidence: Math.round(80 + Math.random() * 20),
+            thumbnailUrl: `https://via.placeholder.com/80x50?text=${isRegistered ? "REG" : "UNREG"}`,
+          };
+        });
+
+        return events;
+      }
+
+      function updateActivityRangeSelect() {
+        const cfg = RESOLUTION_CONFIG[activityResolution];
+        activityRangeSelect.innerHTML = cfg.ranges
+          .map(
+            (value) => `
+          <option value="${value}">
+            ${cfg.label} ${value} ${cfg.unit}
+          </option>
+        `
+          )
+          .join("");
+        activityRange = cfg.ranges[0];
+      }
+
+      async function loadHistoryActivity() {
+        const events = await fetchActivityHistory(activityResolution, activityRange);
+        renderActivity(events);
+      }
+
+      function setMode(newMode) {
+        activityMode = newMode;
+
+        if (activityMode === "live") {
+          liveDot.classList.add("on");
+          activityModeLabel.textContent = "Live · Last 20 events";
+          activityHistoryFilters.style.display = "none";
+          renderActivity(STATIC_LIVE_EVENTS);
+        } else {
+          liveDot.classList.remove("on");
+          const cfg = RESOLUTION_CONFIG[activityResolution];
+          activityModeLabel.textContent = `History · ${cfg.label} ${activityRange} ${cfg.unit}`;
+          activityHistoryFilters.style.display = "flex";
+          loadHistoryActivity();
+        }
+      }
+
+      activityModeChips.addEventListener("click", (evt) => {
+        const chip = evt.target.closest(".chip");
+        if (!chip) return;
+        const mode = chip.dataset.mode;
+        if (!mode || mode === activityMode) return;
+
+        activityModeChips.querySelectorAll(".chip").forEach((btn) => {
+          btn.classList.toggle("active", btn === chip);
+        });
+
+        setMode(mode);
+      });
+
+      activityResolutionChips.addEventListener("click", (evt) => {
+        const chip = evt.target.closest(".chip");
+        if (!chip) return;
+        const res = chip.dataset.resolution;
+        if (!res || res === activityResolution) return;
+
+        activityResolution = res;
+        activityResolutionChips.querySelectorAll(".chip").forEach((btn) => {
+          btn.classList.toggle("active", btn === chip);
+        });
+        updateActivityRangeSelect();
+        if (activityMode === "history") {
+          loadHistoryActivity();
+        }
+      });
+
+      activityRangeSelect.addEventListener("change", (evt) => {
+        activityRange = Number(evt.target.value) || activityRange;
+        if (activityMode === "history") {
+          loadHistoryActivity();
+        }
+      });
+
+      // Init activity feed
+      updateActivityRangeSelect();
+      setMode("live");
+    });
+  </script>
+  <script src="https://js.pusher.com/8.2/pusher.min.js"></script>
+  <script>
+    const pusher = new Pusher("437af9281329a965a6f7", { cluster: "ap1" });
+
+    const channel = pusher.subscribe("gate-channel");
+    const videoChannel = pusher.subscribe("video-channel");
+
+    const band = document.querySelector(".gate-status-band");
+    const label = document.querySelector(".gate-status-label");
+    const plateField = document.querySelectorAll(".gate-info-item-value");
+    const gateVehicleImg = document.querySelector(".gate-vehicle-img");
+
+    const GATE_DETECT_TIMEOUT_MS = 15000;
+
+    // keep track of the current reset timer
+    let gateResetTimer = null;
+
+    const reset = () => {
+      band.classList.remove("registered", "not-registered");
+      label.textContent = "NO VEHICLE";
+      gateVehicleImg.src = "";
+
+      document
+        .querySelectorAll(".gate-info-item-value")
+        .forEach((el) => (el.textContent = "---"));
+    };
+
+    // helper to schedule a reset safely (no stacking timeouts)
+    const scheduleGateReset = () => {
+      if (gateResetTimer) {
+        clearTimeout(gateResetTimer);
+      }
+      gateResetTimer = setTimeout(() => {
+        reset();
+        gateResetTimer = null; // free reference
+      }, GATE_DETECT_TIMEOUT_MS);
+    };
+
+    reset();
+
+    channel.bind("gate-update", (data) => {
+      console.log("gate-update ", data);
+      gateVehicleImg.src = "";
+
+      // No vehicle on sensor – clear any pending reset and reset immediately
+      if (data.sensor === "NO") {
+        if (gateResetTimer) {
+          clearTimeout(gateResetTimer);
+          gateResetTimer = null;
+        }
+        reset();
+        return;
+      } else {
+        // small delay for image fade/animation
+        setTimeout(() => {
+          gateVehicleImg.src = "images/car.png";
+        }, 100);
+      }
+
+      // Vehicle present but no plate detected (unregistered / unknown)
+      if (!data.registered && data.sensor === "YES") {
+        band.classList.remove("registered");
+        band.classList.add("not-registered");
+        label.textContent = "NOT REGISTERED";
+        scheduleGateReset();
+        return;
+      } else if (!data.plate) {
+        band.classList.remove("registered", "not-registered");
+        label.textContent = "NO VEHICLE";
+        reset();
+        return;
+      }
+
+      // Plate found
+      if (plateField && plateField.length > 0) {
+        plateField[0].textContent = data?.plate;
+        plateField[1].textContent = data?.driver;
+        plateField[2].textContent = data?.type;
+        plateField[3].textContent = data?.brand;
+        plateField[4].textContent = data?.model;
+
+        setTimeout(() => {
+          const type = data?.type?.toLowerCase() || "";
+          if (type.includes("motorcycle")) {
+            gateVehicleImg.src = "images/motorcycle.png";
+          } else if (type.includes("truck")) {
+            gateVehicleImg.src = "images/truck.png";
+          } else if (type.includes("bus")) {
+            gateVehicleImg.src = "images/bus.png";
+          } else if (type.includes("utility vehicle")) {
+            gateVehicleImg.src = "images/van.png";
+          } else if (type.includes("pickup")) {
+            gateVehicleImg.src = "images/pickup.png";
+          } else {
+            gateVehicleImg.src = "images/car.png";
+          }
+        }, 100);
+      }
+
+      if (data.registered) {
+        band.classList.remove("not-registered");
+        band.classList.add("registered");
+        label.textContent = "REGISTERED";
+      } else {
+        band.classList.remove("registered");
+        band.classList.add("not-registered");
+        label.textContent = "NOT REGISTERED";
+      }
+
+      // schedule a single reset for this detection
+      scheduleGateReset();
+    });
+
+    // ----------------------------------------------------
+    // CAMERA STREAM + ONLINE/OFFLINE DETECTION
+    // ----------------------------------------------------
+
+    // Choose the <img> element that will show the stream
+    const liveImg = document.querySelector(
+      ".camera-previews .camera-card:first-child .camera-thumb img"
+    );
+
+    // Status pill for that same camera
+    const cameraStatusPill = document.querySelector(
+      ".camera-previews .camera-card:first-child .camera-status-pill"
+    );
+
+    // How long (ms) without frames before we consider the camera offline
+    const CAMERA_TIMEOUT_MS = 2000;
+
+    let lastFrameTs = null;
+
+    function updateCameraStatus(isOnline) {
+      if (!cameraStatusPill) return;
+
+      cameraStatusPill.classList.toggle("online", isOnline);
+      cameraStatusPill.classList.toggle("offline", !isOnline);
+      cameraStatusPill.innerHTML = `<i class="fas fa-circle"></i> ${isOnline ? "Online" : "Offline"
+        }`;
+      if (!isOnline) {
+        // only reset preview when actually offline
+        liveImg.src = "images/no-video.png";
+      }
+    }
+
+    // Start as offline until the first frame arrives
+    updateCameraStatus(false);
+
+    // Heartbeat: called whenever we get a new frame
+    videoChannel.bind("frame", (data) => {
+      const streamId = data.stream_id || "mobile-1";
+      const ts = data.ts || Date.now();
+
+      lastFrameTs = Date.now();
+      updateCameraStatus(true);
+
+      // This will fetch the latest JPEG; `ts` is just cache-busting
+      liveImg.src = `/api/stream/latest-frame?stream_id=${encodeURIComponent(
+        streamId
+      )}&ts=${ts}`;
+    });
+
+    // Periodically check if we've stopped receiving frames
+    setInterval(() => {
+      if (lastFrameTs === null) return; // never got a frame yet
+
+      const diff = Date.now() - lastFrameTs;
+      if (diff > CAMERA_TIMEOUT_MS) {
+        updateCameraStatus(false);
+      }
+    }, 1000);
+  </script>
+
 </body>
 
 </html>

@@ -19,12 +19,9 @@
     <div id="app"></div>
 
     <template id="page-content">
-      <h2>Drivers</h2>
-      <p>List of registered drivers will go here.</p>
+      <p class="page-subtitle">List of registered drivers will go here.</p>
 
-      <div
-        style="margin-bottom: 16px; display: flex; justify-content: flex-end"
-      >
+      <div class="page-controls">
         <button id="add-driver-btn" class="modal-btn modal-btn-primary">
           <i class="fa fa-plus"></i>&nbsp; Add Driver
         </button>
@@ -37,11 +34,23 @@
               <th style="width: 60px">Edit</th>
               <th>ID</th>
               <th>Name</th>
+              <th class="vehicle-col">Vehicle</th>
               <th>Role</th>
               <th>Identification Type</th>
               <th>Identification Number</th>
               <th>Gender</th>
               <th style="width: 80px">Delete</th>
+            </tr>
+            <tr class="filters">
+              <th style="width: 60px"></th>
+              <th><input type="text" id="filterDriverID" placeholder="Search Driver ID"></th>
+              <th><input type="text" id="filterDriverName" placeholder="Search Driver name"></th>
+              <th><input type="text" id="filterDriverVehicles" placeholder="Search Vehicle"></th>
+              <th><input type="text" id="filterDriverRoleType" placeholder="Search Role type"></th>
+              <th><input type="text" id="filterIdentificationType" placeholder="Search Identification type"></th>
+              <th><input type="text" id="filterIdentificationNumber" placeholder="Search Identification number"></th>
+              <th><input type="text" id="filterGender" placeholder="Search Gender"></th>
+              <th style="width: 80px"></th>
             </tr>
           </thead>
           <tbody id="drivers-tbody">
@@ -52,6 +61,7 @@
     </template>
 
     <script src="js/layout.js"></script>
+    <script src="js/modal.js"></script>
     <script src="js/drivers.js"></script>
   </body>
 </html>

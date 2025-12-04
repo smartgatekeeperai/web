@@ -3,8 +3,8 @@ import express from "express";
 import { createControllers } from "./controller.js";
 import path from "path";
 
-export function registerRoutes(app, { pool, webRoutes, publicDir, upload }) {
-  const controllers = createControllers({ pool, publicDir });
+export function registerRoutes(app, { pool, webRoutes, publicDir, upload, pusher }) {
+  const controllers = createControllers({ pool, publicDir, pusher });
 
   // ----------------------------------------------------
   // Admin Dashboard Routes (HTML pages in /public)
@@ -40,6 +40,26 @@ export function registerRoutes(app, { pool, webRoutes, publicDir, upload }) {
   // Route: POST /detect
   // ----------------------------------------------------
   app.post("/api/detect", upload.single("frame"), controllers.detectHandler);
+
+  // ----------------------------------------------------
+  // Route: POST /stream-frame
+  // ----------------------------------------------------
+  app.post("/api/stream-frame", upload.single("frame"), controllers.streamFrameHandler);
+
+  // ----------------------------------------------------
+  // Route: GET /latest-frame
+  // ----------------------------------------------------
+  app.get("/api/stream/latest-frame", controllers.getLatestFrameHandler);
+
+  // ----------------------------------------------------
+  // Route: POST /sensor
+  // ----------------------------------------------------
+  app.post("/api/sensor", controllers.sensorHandler);
+
+  // ----------------------------------------------------
+  // Route: GET /vehicle-brands
+  // ----------------------------------------------------
+  app.get("/api/vehicle-brands", controllers.getVehicleBrands);
 
   // ----------------------------------------------------
   // CRUD API routes (upsert, delete, get all)

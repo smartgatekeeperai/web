@@ -1,0 +1,13 @@
+sequence,timestamp,SENSOR DETECTED,logg function,plate number action,plate result,System gate status
+1,2025-12-03 05:01:01:000,NO,start logg,not started detecting,no result,NOT REGISTERED
+2,2025-12-03 05:01:01:500,NO,not logged same as before,not started detecting,no result,NOT REGISTERED
+3,2025-12-03 05:01:02:000,NO,not logged same as before,not started detecting,no result,NOT REGISTERED
+4,2025-12-03 05:01:02:500,YES,logged,starts detecting platenumber,no result,NOT REGISTERED
+5,2025-12-03 05:01:03:000,YES,not logged same as before,starts detecting platenumber,no result,NOT REGISTERED
+6,2025-12-03 05:01:03:500,YES,not logged same as before,starts detecting platenumber,detected not found,REGISTERED
+7,2025-12-03 05:01:04:000,YES,not logged same as before,starts detecting platenumber,detected found,REGISTERED
+8,2025-12-03 05:01:04:500,YES,not logged same as before,stops detecting wait sensor,no result,REGISTERED
+9,2025-12-03 05:01:05:000,YES,not logged same as before,not started detecting,no result,REGISTERED
+10,2025-12-03 05:01:05:500,YES,not logged same as before,not started detecting,no result,REGISTERED
+11,2025-12-03 05:01:06:000,NO,logged,not started detecting,no result,NOT REGISTERED
+12,2025-12-03 05:01:06:500,NO,not logged same as before,not started detecting,no result,NOT REGISTERED

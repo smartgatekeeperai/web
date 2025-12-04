@@ -1,6 +1,73 @@
 // public/js/layout.js
 
-document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", async () => {
+
+  /* Load external API for Vehicle Brand and Model */
+  async function loadVehicleBrands() {
+    try {
+      const resp = await fetch("/api/vehicle-brands/", { method: "GET" });
+
+      if (!resp.ok) {
+        throw new Error(`Failed to load Role types`);
+      }
+      const data = await resp.json();
+      localStorage.setItem("vehicle-brands", data?.data);
+    } catch (err) {
+      console.error(err);
+      await window.showAlert({
+        type: "error",
+        title: "Failed to load Role types",
+        message: `${err?.message}. Please try again.`,
+      });
+    }
+  }
+  /* end */
+  
+  /* Load Role type and Identification type */
+  async function loadRoleType() {
+    try {
+      const resp = await fetch("/api/role-types/", { method: "GET" });
+
+      if (!resp.ok) {
+        throw new Error(`Failed to load Role types`);
+      }
+      const data = await resp.json();
+      localStorage.setItem("role-types", data?.data?.map((x) => x.name));
+    } catch (err) {
+      console.error(err);
+      await window.showAlert({
+        type: "error",
+        title: "Failed to load Role types",
+        message: `${err?.message}. Please try again.`,
+      });
+    }
+  }
+
+  async function loadIdentificationTypes() {
+    try {
+      const resp = await fetch("/api/identification-types/", { method: "GET" });
+
+      if (!resp.ok) {
+        throw new Error(`Failed to load Identification types`);
+      }
+      const data = await resp.json();
+      localStorage.setItem("identification-types", data?.data?.map((x) => x.name));
+    } catch (err) {
+      console.error(err);
+      await window.showAlert({
+        type: "error",
+        title: "Failed to load Identification types",
+        message: `${err?.message}. Please try again.`,
+      });
+    }
+  }
+  /* end */
+  Promise.all([
+    loadVehicleBrands(),
+    loadRoleType(), 
+    loadIdentificationTypes(),
+  ]);
+
   const CURRENT_URL = window.location.pathname; // e.g. /camera.html or /camera
   const HAS_HTML = CURRENT_URL.endsWith(".html");
 
@@ -87,7 +154,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (page === currentPage) {
       item.classList.add("active");
       if (pageTitleEl) {
-        pageTitleEl.textContent = item.textContent.trim() + " Overview";
+        pageTitleEl.textContent = item.textContent.trim();
       }
     }
 
@@ -189,201 +256,22 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
-  /* =========================================================
-   * Reusable Modal API
-   *  - window.showConfirm({ title, message, ... }) -> Promise<'yes'|'no'|'cancel'|'close'|'backdrop'>
-   *  - window.showAlert({ type, title, message, ... }) -> Promise<'ok'>
-   *  - window.showFormModal({ title, render(...) }) -> Promise<{ cancelled: boolean }>
-   * =======================================================*/
-
-  const modalBackdrop = document.getElementById("app-modal-backdrop");
-  const modalEl = document.getElementById("app-modal");
-  const modalTitleEl = document.getElementById("app-modal-title");
-  const modalBodyEl = document.getElementById("app-modal-body");
-  const modalFooterEl = document.getElementById("app-modal-footer");
-  const modalCloseEl = document.getElementById("app-modal-close");
-
-  let modalResolve = null;
-
-  function resetModalClasses() {
-    modalEl.className = "modal-container";
+  //data helpers
+  window.getRoleTypes = function () {
+    return (localStorage.getItem("role-types") ?? "")?.split(",")?.map(x=> x.trim()) ?? [];
   }
 
-  function closeModal(result) {
-    // modalBodyEl.innerHTML = "";
-    // modalFooterEl.innerHTML = "";
-    resetModalClasses();
-    if (typeof modalResolve === "function") {
-      modalResolve(result);
-      modalResolve = null;
-    }
-    modalBackdrop.classList.remove("active");
+  window.getIdentificationTypes = function () {
+    return (localStorage.getItem("identification-types") ?? "")?.split(",")?.map(x=> x.trim()) ?? [];
   }
-
-  modalCloseEl?.addEventListener("click", () => closeModal("close"));
-
-  // Click outside modal closes it
-  modalBackdrop?.addEventListener("click", (e) => {
-    if (e.target === modalBackdrop) {
-      closeModal("backdrop");
-    }
-  });
-
-  function openModal({ title, html, variant = "default", buttons = [] }) {
-    resetModalClasses();
-    if (variant) {
-      modalEl.classList.add(`modal-${variant}`);
-    }
-
-    modalTitleEl.textContent = title || "";
-    modalBodyEl.innerHTML = html || "";
-    modalFooterEl.innerHTML = "";
-
-    buttons.forEach((btn) => {
-      const b = document.createElement("button");
-      b.textContent = btn.label;
-      b.type = "button";
-      b.className = `modal-btn modal-btn-${btn.variant || "primary"}`;
-      b.addEventListener("click", () => {
-        closeModal(btn.value);
-      });
-      modalFooterEl.appendChild(b);
-    });
-
-    modalBackdrop.classList.add("active");
-
-    return new Promise((resolve) => {
-      modalResolve = resolve;
-    });
-  }
-
-  // Yes / No / Cancel confirm modal
-  window.showConfirm = function (opts = {}) {
-    const {
-      title = "Confirm action",
-      message = "Are you sure?",
-      yesText = "Yes",
-      noText = "No",
-      cancelText = "Cancel",
-      showNo = true,
-      showCancel = true,
-      variant = "confirm",
-    } = opts;
-
-    const buttons = [];
-
-    if (showCancel) {
-      buttons.push({
-        label: cancelText,
-        value: "cancel",
-        variant: "ghost",
-      });
-    }
-
-    if (showNo) {
-      buttons.push({
-        label: noText,
-        value: "no",
-        variant: "secondary",
-      });
-    }
-
-    buttons.push({
-      label: yesText,
-      value: "yes",
-      variant: "primary",
-    });
-
-    return openModal({
-      title,
-      html: `<p>${message}</p>`,
-      variant,
-      buttons,
-    });
+  
+  window.getVehicleBrands = function () {
+    return (localStorage.getItem("vehicle-brands") ?? "")
+      ?.split(",")
+      ?.map((x) => x.trim())
+      ?.filter(Boolean) ?? [];
   };
-
-  // Success / Error / Info modal
-  window.showAlert = function (opts = {}) {
-    const {
-      title = "Notice",
-      message = "",
-      type = "info", // 'success' | 'error' | 'info'
-      okText = "OK",
-    } = opts;
-
-    const variantMap = {
-      success: "success",
-      error: "error",
-      info: "info",
-    };
-
-    return openModal({
-      title,
-      html: `<p>${message}</p>`,
-      variant: variantMap[type] || "info",
-      buttons: [
-        {
-          label: okText,
-          value: "ok",
-          variant: "primary",
-        },
-      ],
-    });
-  };
-
-  // Generic form modal (for create/update)
-  // Caller renders inputs inside the modal body.
-  window.showFormModal = function (opts = {}) {
-    const {
-      title = "",
-      render, // function (bodyEl) { ...create inputs... }
-      submitText = "Save",
-      cancelText = "Cancel",
-      variant = "default",
-    } = opts;
-
-    resetModalClasses();
-    if (variant) {
-      modalEl.classList.add(`modal-${variant}`);
-    }
-
-    modalTitleEl.textContent = title || "";
-    modalBodyEl.innerHTML = "";
-    modalFooterEl.innerHTML = "";
-
-    if (typeof render === "function") {
-      render(modalBodyEl);
-    } else if (opts.html) {
-      modalBodyEl.innerHTML = opts.html;
-    }
-
-    const cancelBtn = document.createElement("button");
-    cancelBtn.textContent = cancelText;
-    cancelBtn.type = "button";
-    cancelBtn.className = "modal-btn modal-btn-ghost";
-    cancelBtn.addEventListener("click", () =>
-      closeModal({ cancelled: true })
-    );
-
-    const submitBtn = document.createElement("button");
-    submitBtn.textContent = submitText;
-    submitBtn.type = "button";
-    submitBtn.className = "modal-btn modal-btn-primary";
-    submitBtn.addEventListener("click", () =>
-      closeModal({ cancelled: false })
-    );
-
-    modalFooterEl.appendChild(cancelBtn);
-    modalFooterEl.appendChild(submitBtn);
-
-    modalBackdrop.classList.add("active");
-
-    return new Promise((resolve) => {
-      modalResolve = resolve;
-    });
-  };
-
-  //
+  //util helpers
   window.createSelectOptions = function (array = [], selectedValue = null) {
     if (!Array.isArray(array)) return '';
 
@@ -393,5 +281,119 @@ document.addEventListener("DOMContentLoaded", () => {
         return `<option value="${value}" ${selected}>${value}</option>`;
       })
       .join('');
+  }
+
+  window.setupAutocomplete = function (inputEl, listEl, items = []) {
+    if (!inputEl || !listEl || !Array.isArray(items)) return;
+
+    let currentItems = [...items];
+
+    function closeList() {
+      listEl.innerHTML = "";
+      listEl.style.display = "none";
+    }
+
+    function positionList() {
+      const rect = inputEl.getBoundingClientRect();
+      const viewportHeight = window.innerHeight;
+      const viewportWidth = window.innerWidth;
+
+      const spaceBelow = viewportHeight - rect.bottom;
+      const spaceAbove = rect.top;
+
+      const desiredHeight = 180; // same as CSS max-height
+      const minMargin = 8;
+
+      // base width & horizontal position
+      const width = rect.width;
+      let left = rect.left;
+
+      // Clamp left so dropdown doesn't go off-screen horizontally
+      if (left + width + minMargin > viewportWidth) {
+        left = Math.max(minMargin, viewportWidth - width - minMargin);
+      }
+      if (left < minMargin) {
+        left = minMargin;
+      }
+
+      listEl.style.minWidth = width + "px";
+      listEl.style.left = left + "px";
+
+      // Decide whether to show above or below
+      listEl.classList.remove("above");
+      listEl.style.top = "auto";
+      listEl.style.bottom = "auto";
+
+      if (spaceBelow >= desiredHeight || spaceBelow >= spaceAbove) {
+        // show below
+        listEl.style.top = rect.bottom + "px";
+      } else {
+        // show above
+        listEl.classList.add("above");
+        listEl.style.bottom = viewportHeight - rect.top + "px";
+      }
+    }
+
+    function renderList(filterText) {
+      const q = (filterText || "").toLowerCase();
+      const matches = currentItems
+        .filter((b) => b.toLowerCase().includes(q))
+        .slice(0, 8); // limit suggestions
+
+      if (!matches.length) {
+        closeList();
+        return;
+      }
+
+      listEl.innerHTML = "";
+      matches.forEach((brand) => {
+        const div = document.createElement("div");
+        div.className = "autocomplete-item";
+        div.textContent = brand;
+        div.addEventListener("mousedown", (e) => {
+          e.preventDefault(); // avoid blur before click
+          inputEl.value = brand;
+          closeList();
+        });
+        listEl.appendChild(div);
+      });
+
+      listEl.style.display = "block";
+      positionList();
+    }
+
+    inputEl.addEventListener("input", () => {
+      const val = inputEl.value.trim();
+      if (!val) {
+        closeList();
+        return;
+      }
+      renderList(val);
+    });
+
+    inputEl.addEventListener("focus", () => {
+      const val = inputEl.value.trim();
+      if (val) {
+        renderList(val);
+      }
+    });
+
+    inputEl.addEventListener("blur", () => {
+      // small delay so click can register
+      setTimeout(() => closeList(), 150);
+    });
+
+    // Reposition on window resize / scroll (viewport or modal)
+    const modalBody = document.querySelector(".modal-body");
+
+    function handleReposition() {
+      if (listEl.style.display === "block") {
+        positionList();
+      }
+    }
+
+    window.addEventListener("resize", handleReposition);
+    window.addEventListener("scroll", handleReposition, true); // capture scrolls
+    modalBody && modalBody.addEventListener("scroll", handleReposition);
   }
 });

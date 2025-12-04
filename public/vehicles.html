@@ -1,55 +1,77 @@
-﻿<!-- public/drivers.html -->
+﻿<!-- public/vehicles.html -->
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Drivers</title>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Vehicles</title>
 
-  <link
-    rel="stylesheet"
-    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
-  />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
+    />
 
-  <link rel="stylesheet" href="/css/layout.css" />
-  <link rel="stylesheet" href="/css/drivers.css" />
-</head>
-<body data-page="vehicles">
-  <div id="app"></div>
+    <link rel="stylesheet" href="css/layout.css" />
+    <link rel="stylesheet" href="css/vehicles.css" />
+  </head>
 
-  <template id="page-content">
-    <h2>Drivers</h2>
-    <p>List of registered drivers will go here.</p>
+  <body data-page="vehicles">
+    <div id="app"></div>
 
-    <div class="table-container">
-      <table>
-        <thead>
-          <tr>
-            <th>Driver ID</th>
-            <th>Name</th>
-            <th>Plate Number</th>
-            <th>Status</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td>D-001</td>
-            <td>Juan Dela Cruz</td>
-            <td>ABC1234</td>
-            <td>Active</td>
-          </tr>
-          <tr>
-            <td>D-002</td>
-            <td>Maria Santos</td>
-            <td>XYZ9876</td>
-            <td>Inactive</td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-  </template>
+    <template id="page-content">
+      <p class="page-subtitle">List of registered vehicles will go here.</p>
+      
+      <div class="filter-results">
+        Filter for driver:
+        <a class="btn-view" title="View driver" type="button">
+          <i class="fa fa-id-card"></i>
+          <span id="driver-details"></span>
+        </a>
+        <a class="btn-view" href="/vehicles" title="View driver" type="button">
+          <i class="fa fa-times"></i>
+          Close
+        </a>
 
-  <script src="js/layout.js"></script>
-  <script src="js/drivers.js"></script>
-</body>
+      </div>
+      <div class="page-controls">
+        <button id="add-driver-btn" class="modal-btn modal-btn-primary">
+          <i class="fa fa-plus"></i>&nbsp; Add Vehicle
+        </button>
+      </div>
+
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th style="width: 60px">View</th>
+              <th>Driver</th>
+              <th>ID</th>
+              <th>Plate number</th>
+              <th>Type</th>
+              <th>Model</th>
+              <th>Brand</th>
+              <th style="width: 80px">Delete</th>
+            </tr>
+            <tr class="filters">
+              <th style="width: 60px"></th>
+              <th><input type="text" id="filterVehicleDriver" placeholder="Search driver"></th>
+              <th><input type="text" id="filterVehicleId" placeholder="Search vehicle ID"></th>
+              <th><input type="text" id="filterVehiclePlatenumber" placeholder="Search platenumber"></th>
+              <th><input type="text" id="filterVehicleType" placeholder="Search type"></th>
+              <th><input type="text" id="filterVehicleBrand" placeholder="Search brand"></th>
+              <th><input type="text" id="filterVehicleModel" placeholder="Search model"></th>
+              <th style="width: 80px"></th>
+            </tr>
+          </thead>
+          <tbody id="vehicles-tbody">
+            <!-- Filled by vehicles.js via /api/vehicles -->
+          </tbody>
+        </table>
+      </div>
+    </template>
+
+    <script src="js/layout.js"></script>
+    <script src="js/modal.js"></script>
+    <script src="js/vehicles.js"></script>
+  </body>
 </html>

@@ -1,2 +1,48 @@
-﻿/* Placeholder for drivers.css */
+﻿/* public/css/vehicles.css */
+.table-container {
+  overflow: auto;
+}
 
+.table-container table {
+  min-width: 1280px;
+  overflow: auto;
+}
+
+.table-container table thead tr {
+  position: sticky;
+  top: 0;
+}
+
+.page-subtitle:not(.show), .page-controls:not(.show) {
+  display: none;
+}
+
+.page-controls {
+  justify-content: flex-start;
+}
+
+.filter-results {
+  margin-bottom: 15px;
+  display: none;
+  align-items: center;
+  flex-direction: row;
+  gap: 5px;
+}
+
+.filter-results.show {
+  display: flex;
+}
+
+.filter-results .btn-view {
+  display: flex;
+  flex-direction: row;
+  color: #2980b9;
+  cursor: pointer;
+  gap: 5px;
+  text-decoration: none;
+}
+
+.details-item span {
+  font-size: 1rem;
+  font-weight: 500;
+}
