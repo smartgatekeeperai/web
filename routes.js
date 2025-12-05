@@ -37,7 +37,7 @@ export function registerRoutes(app, { pool, webRoutes, publicDir, upload, pusher
   app.use(express.static(publicDir));
 
   // ----------------------------------------------------
-  // Route: POST /detect
+  // Route: POST /detect Groq
   // ----------------------------------------------------
   app.post("/api/detect", upload.single("frame"), controllers.detectHandler);
 

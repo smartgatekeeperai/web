@@ -1,3 +1,4 @@
+//controller.js
 import Groq from "groq-sdk";
 import { imageSize } from "image-size";
 import camelcaseKeys from "camelcase-keys";
@@ -52,7 +53,7 @@ export function createControllers({ pool, pusher }) {
   };
 
   // ----------------------------------------------------
-  // Utility: Buffer → base64 data URL
+  // Utility: Buffer → base64 data URL  (Groq)
   // ----------------------------------------------------
   function encodeBytesToDataUrl(buffer, contentType) {
     const ct = contentType || "image/jpeg";
@@ -267,7 +268,7 @@ export function createControllers({ pool, pusher }) {
   }
 
   // ----------------------------------------------------
-  // /detect handler
+  // /detect handler (Groq)
   // ----------------------------------------------------
   async function detectHandler(req, res) {
     const streamId = req.query?.stream_id || null;
@@ -498,7 +499,7 @@ export function createControllers({ pool, pusher }) {
   }
 
   // ----------------------------------------------------
-  // /sensor handler
+  // /sensor handler (mobile → server frame upload)
   // ----------------------------------------------------
   async function streamFrameHandler(req, res) {
     try {
@@ -559,7 +560,7 @@ export function createControllers({ pool, pusher }) {
   }
 
   // ----------------------------------------------------
-  // /sensor handler
+  // /sensor handler (vehicle presence YES/NO from ESP)
   // ----------------------------------------------------
   async function sensorHandler(req, res) {
     const { state } = req.body || {};
@@ -570,9 +571,12 @@ export function createControllers({ pool, pusher }) {
         .json({ success: false, message: "Invalid sensor state" });
     }
     const timeSinceLastUpdate = Date.now() - (gateState.lastUpdate || 0);
-    if ((gateState.sensor === "YES" && state === "NO" && timeSinceLastUpdate > 5000)
-      || (gateState.sensor === "NO" && state === "YES" && !plateSensorStarted)
-      || (gateState.sensor === "NO" && state === "NO" && !plateSensorStarted)
+    if (
+      (gateState.sensor === "YES" &&
+        state === "NO" &&
+        timeSinceLastUpdate > 5000) ||
+      (gateState.sensor === "NO" && state === "YES" && !plateSensorStarted) ||
+      (gateState.sensor === "NO" && state === "NO" && !plateSensorStarted)
     ) {
       gateState.plate = null;
       gateState.registered = false;
@@ -582,7 +586,7 @@ export function createControllers({ pool, pusher }) {
       gateState.detections = [];
       gateState.lastUpdate = Date.now();
     }
-    
+
 
     // Push update to UI
     await pusher.trigger("gate-channel", "gate-update", {
