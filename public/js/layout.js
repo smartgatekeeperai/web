@@ -82,15 +82,15 @@ document.addEventListener("DOMContentLoaded", async () => {
     <div class="sidebar" id="sidebar">
       <div class="logo">SmartGateKeeper AI</div>
       <ul>
-        <li data-page="dashboard">Dashboard</li>
-        <li data-page="camera">Camera</li>
-        <li data-page="logs">Logs</li>
-        <li data-page="drivers">Drivers</li>
-        <li data-page="vehicles">Vehicles</li>
-        <li data-page="role">Role</li>
-        <li data-page="identification-types">Identification Types</li>
-        <li data-page="user">Users</li>
-        <li data-page="system-config">System Config</li>
+        <li data-page="dashboard"><a href="${HAS_HTML ? '/dashboard.html' : 'dashboard' }">Dashboard</a></li>
+        <li data-page="camera"><a>Camera</a></li>
+        <li data-page="logs"><a>Logs</a></li>
+        <li data-page="drivers"><a href="${HAS_HTML ? '/drivers.html' : 'drivers' }">Drivers</a></li>
+        <li data-page="vehicles"><a href="${HAS_HTML ? '/vehicles.html' : 'vehicles' }">Vehicles</a></li>
+        <li data-page="role"><a>Role</a></li>
+        <li data-page="identification-types"><a>Identification Types</a></li>
+        <li data-page="user"><a>Users</a></li>
+        <li data-page="system-config"><a>System Config</a></li>
       </ul>
       <div class="user-profile">
         <div class="avatar">
@@ -175,7 +175,7 @@ document.addEventListener("DOMContentLoaded", async () => {
           href = "/index.html";
           break;
         case "camera":
-          href = "/camera.html";
+          // href = "/camera.html";
           break;
         case "drivers":
           href = "/drivers.html";
@@ -184,26 +184,26 @@ document.addEventListener("DOMContentLoaded", async () => {
           href = "/vehicles.html";
           break;
         case "identification-types":
-          href = "/identification-types.html";
+          // href = "/identification-types.html";
           break;
         case "logs":
-          href = "/logs.html";
+          // href = "/logs.html";
           break;
         case "role":
-          href = "/role.html";
+          // href = "/role.html";
           break;
         case "system-config":
-          href = "/system-config.html";
+          // href = "/system-config.html";
           break;
         case "user":
-          href = "/user.html";
+          // href = "/user.html";
           break;
         default:
           href = `/${targetPage}.html`;
       }
-      window.location.href = HAS_HTML
-        ? href
-        : href.replace(".html", "").replace("index", "dashboard");
+      // window.location.href = HAS_HTML
+      //   ? href
+      //   : href.replace(".html", "").replace("index", "dashboard");
     });
   });
 

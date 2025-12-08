@@ -54,17 +54,21 @@ body {
     flex-grow: 1;
 }
 
-.sidebar ul li {
+.sidebar ul li a {
+    width: 100%;
     padding: 15px 20px;
     cursor: pointer;
     transition: background-color 0.3s ease;
+    display: block;
+    color: #fff;
+    text-decoration: none;
 }
 
-.sidebar ul li:hover {
+.sidebar ul li a:hover {
     background-color: #34495e;
 }
 
-.sidebar ul li.active {
+.sidebar ul li.active a {
     background-color: #3498db;
 }
 
