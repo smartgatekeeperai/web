@@ -508,25 +508,23 @@ document.addEventListener("DOMContentLoaded", () => {
 
   channel.bind("gate-update", (data) => {
     console.log("gate-update ", data);
-    gateVehicleImg.src = "";
 
     // No vehicle on sensor – clear any pending reset and reset immediately
-    if (data.sensor === "NO") {
+    if (!data.vehicleFound) {
+      gateVehicleImg.src = "";
+      band.classList.remove("registered", "not-registered");
+      label.textContent = "NO VEHICLE";
       if (gateResetTimer) {
         clearTimeout(gateResetTimer);
         gateResetTimer = null;
       }
       reset();
       return;
-    } else {
-      // small delay for image fade/animation
-      setTimeout(() => {
-        gateVehicleImg.src = "images/car.png";
-      }, 100);
     }
+    gateVehicleImg.src = "images/car.png";
 
     // Vehicle present but no plate detected (unregistered / unknown)
-    if (!data.registered && data.sensor === "YES") {
+    if (!data?.driver || !data?.vehicle) {
       band.classList.remove("registered");
       band.classList.add("not-registered");
       label.textContent = "NOT REGISTERED";
@@ -538,14 +536,17 @@ document.addEventListener("DOMContentLoaded", () => {
       reset();
       return;
     }
+    band.classList.remove("not-registered");
+    band.classList.add("registered");
+    label.textContent = "REGISTERED";
 
     // Plate found
     if (plateField && plateField.length > 0) {
-      plateField[0].textContent = data?.plate;
-      plateField[1].textContent = data?.driver;
-      plateField[2].textContent = data?.type;
-      plateField[3].textContent = data?.brand;
-      plateField[4].textContent = data?.model;
+      plateField[0].textContent = data?.vehicle?.plate;
+      plateField[1].textContent = data?.driver?.fullName;
+      plateField[2].textContent = data?.vehicle?.type;
+      plateField[3].textContent = data?.vehicle?.brand;
+      plateField[4].textContent = data?.vehicle?.model;
 
       setTimeout(() => {
         const type = data?.type?.toLowerCase() || "";
@@ -565,15 +566,6 @@ document.addEventListener("DOMContentLoaded", () => {
       }, 100);
     }
 
-    if (data.registered) {
-      band.classList.remove("not-registered");
-      band.classList.add("registered");
-      label.textContent = "REGISTERED";
-    } else {
-      band.classList.remove("registered");
-      band.classList.add("not-registered");
-      label.textContent = "NOT REGISTERED";
-    }
 
     // schedule a single reset for this detection
     scheduleGateReset();
