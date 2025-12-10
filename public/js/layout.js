@@ -1,6 +1,13 @@
 // public/js/layout.js
 
 document.addEventListener("DOMContentLoaded", async () => {
+  
+    const isProd = ![
+      "localhost",
+      "127.",
+      "192.168.",
+      "10."
+    ].some(prefix => location.hostname.startsWith(prefix));
 
   /* Load external API for Vehicle Brand and Model */
   async function loadVehicleBrands() {
@@ -256,7 +263,11 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
   });
 
+
   //data helpers
+  window.getAIURL = () => {
+    return `${isProd ? 'https://smartgatekeeperai-vehicle-detector.hf.space' : 'http://192.168.254.103:8000'}`;
+  }
   window.getRoleTypes = function () {
     return (localStorage.getItem("role-types") ?? "")?.split(",")?.map(x=> x.trim()) ?? [];
   }

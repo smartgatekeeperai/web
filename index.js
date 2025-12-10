@@ -20,47 +20,6 @@ console.log(webRoutes);
 
 dotenv.config();
 
-// ----------------------------------------------------
-// Pusher config (production cloud + optional local mode)
-// ----------------------------------------------------
-const isLocalEnv = process.env.VERCEL !== '1' && process.env.NODE_ENV !== 'production';
-
-// Default: Pusher Cloud (works on localhost & Vercel as long as internet)
-const pusherOptions = {
-  appId: process.env.PUSHER_APP_ID,
-  key: process.env.PUSHER_KEY,
-  secret: process.env.PUSHER_SECRET,
-  cluster: process.env.PUSHER_CLUSTER ?? "ap1",
-  useTLS: true, // Cloud API uses HTTPS by default
-};
-
-// Optional: explicit local mode for Soketi/other Pusher-compatible server
-// Only activated if:
-//   - running in local env (not Vercel / not production)
-//   - USE_LOCAL_PUSHER = 'true'
-//   - PUSHER_HOST is set (e.g. 127.0.0.1)
-//   - PUSHER_PORT is set (e.g. 6001)
-if (
-  isLocalEnv &&
-  process.env.USE_LOCAL_PUSHER === 'true' &&
-  process.env.PUSHER_HOST
-) {
-  console.log(
-    `[Pusher] Using LOCAL server at ${process.env.PUSHER_HOST}:${
-      process.env.PUSHER_PORT || 6001
-    }`
-  );
-  pusherOptions.host = process.env.PUSHER_HOST;
-  pusherOptions.port = Number(process.env.PUSHER_PORT || 6001);
-  pusherOptions.useTLS = false; // local HTTP
-} else {
-  console.log(
-    `[Pusher] Using CLOUD (cluster=${pusherOptions.cluster}, TLS=${pusherOptions.useTLS})`
-  );
-}
-
-const pusher = new Pusher(pusherOptions);
-
 const { Pool } = pkg;
 
 // ----------------------------------------------------
@@ -109,7 +68,7 @@ const publicDir = path.join(process.cwd(), 'public');
 // ----------------------------------------------------
 // Register all routes (web + API)
 // ----------------------------------------------------
-registerRoutes(app, { pool, webRoutes, publicDir, upload, pusher });
+registerRoutes(app, { pool, webRoutes, publicDir });
 
 // ----------------------------------------------------
 // Local dev server (disabled on Vercel)

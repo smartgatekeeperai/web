@@ -258,6 +258,8 @@ document.addEventListener("DOMContentLoaded", () => {
   /* ------------------------------------------------
    * Live Activity Feed (Live + History filter)
    * ------------------------------------------------*/
+  const aiURL = window.getAIURL();
+  console.log("aiURL", aiURL);
   const activityList = document.getElementById("activityList");
   const activityModeChips = document.getElementById("activityModeChips");
   const activityHistoryFilters = document.getElementById(
@@ -598,7 +600,7 @@ document.addEventListener("DOMContentLoaded", () => {
     cameraStatusPill.innerHTML = `<i class="fas fa-circle"></i> ${
       isOnline ? "Online" : "Offline"
     }`;
-    if (!isOnline) {
+    if (!isOnline && !liveImg.src.includes("no-video.png")) {
       // only reset preview when actually offline
       liveImg.src = "images/no-video.png";
     }
@@ -616,7 +618,7 @@ document.addEventListener("DOMContentLoaded", () => {
     updateCameraStatus(true);
 
     // This will fetch the latest JPEG; `ts` is just cache-busting
-    liveImg.src = `/api/stream/latest-frame?stream_id=${encodeURIComponent(
+    liveImg.src = `${window.getAIURL()}/latest-frame?stream_id=${encodeURIComponent(
       streamId
     )}&ts=${ts}`;
   });

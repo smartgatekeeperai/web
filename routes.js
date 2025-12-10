@@ -3,8 +3,8 @@ import express from "express";
 import { createControllers } from "./controller.js";
 import path from "path";
 
-export function registerRoutes(app, { pool, webRoutes, publicDir, upload, pusher }) {
-  const controllers = createControllers({ pool, publicDir, pusher });
+export function registerRoutes(app, { pool, webRoutes, publicDir }) {
+  const controllers = createControllers({ pool, publicDir });
 
   // ----------------------------------------------------
   // Admin Dashboard Routes (HTML pages in /public)
@@ -35,26 +35,6 @@ export function registerRoutes(app, { pool, webRoutes, publicDir, upload, pusher
   // Static Web Server for /public assets (CSS, JS, etc.)
   // ----------------------------------------------------
   app.use(express.static(publicDir));
-
-  // ----------------------------------------------------
-  // Route: POST /detect Groq
-  // ----------------------------------------------------
-  app.post("/api/detect", upload.single("frame"), controllers.detectHandler);
-
-  // ----------------------------------------------------
-  // Route: POST /stream-frame
-  // ----------------------------------------------------
-  app.post("/api/stream-frame", upload.single("frame"), controllers.streamFrameHandler);
-
-  // ----------------------------------------------------
-  // Route: GET /latest-frame
-  // ----------------------------------------------------
-  app.get("/api/stream/latest-frame", controllers.getLatestFrameHandler);
-
-  // ----------------------------------------------------
-  // Route: POST /sensor
-  // ----------------------------------------------------
-  app.post("/api/sensor", controllers.sensorHandler);
 
   // ----------------------------------------------------
   // Route: GET /vehicle-brands
