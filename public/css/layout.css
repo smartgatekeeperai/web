@@ -72,6 +72,7 @@ body {
     background-color: #3498db;
 }
 
+/* bottom user strip */
 .user-profile {
     padding: 20px;
     border-top: 1px solid #34495e;
@@ -151,6 +152,7 @@ body {
     font-size: 24px;
     cursor: pointer;
     margin-right: 20px;
+    display: none;
 }
 
 .page-title {
@@ -167,7 +169,6 @@ body {
 #page-container {
     display: flex;
     flex-direction: column;
-    /* gap: 5px; */
 }
 
 .page-subtitle {
@@ -181,7 +182,7 @@ body {
 }
 
 
-/* ========== CARDS / TABLES (same as before) ========== */
+/* ========== CARDS / TABLES ========== */
 .stats {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
@@ -482,7 +483,6 @@ th {
     color: #34495e;
     overflow: auto;
     background-color: #ffffff;
-    /* let dropdown overflow inside modal */
 }
 
 .modal-body p {
@@ -591,10 +591,8 @@ th {
 }
 
 /* Autocomplete styles for vehicle brand */
-/* Autocomplete styles (works above modal / body-level) */
 .autocomplete-wrapper {
     position: relative;
-    /* keeps markup simple; actual positioning is fixed */
 }
 
 .autocomplete-wrapper input {
@@ -603,7 +601,6 @@ th {
 
 .autocomplete-list {
     position: fixed;
-    /* relative to viewport, not modal */
     max-height: 180px;
     overflow-y: auto;
     background: #ffffff;
@@ -611,11 +608,9 @@ th {
     border-radius: 0 0 8px 8px;
     box-shadow: 0 4px 10px rgba(15, 23, 42, 0.12);
     z-index: 2000;
-    /* higher than .modal-backdrop (1100) */
     display: none;
 }
 
-/* When dropdown is rendered above the input */
 .autocomplete-list.above {
     border-radius: 8px 8px 0 0;
 }
@@ -630,10 +625,107 @@ th {
     background-color: #f2f4f7;
 }
 
+/* ========== USER MENU DROPDOWN ========== */
+.user-menu {
+    position: fixed;
+    bottom: 80px;
+    left: 16px;
+    z-index: 1200;
+    display: none;
+    margin-left: 20px;
+}
 
+.user-menu.open {
+    display: block;
+}
+
+.user-menu-card {
+    background: #ffffff;
+    border-radius: 12px;
+    box-shadow: 0 12px 30px rgba(15, 23, 42, 0.3);
+    min-width: 260px;
+    overflow: hidden;
+    border: 1px solid #e1e4ea;
+}
+
+.user-menu-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 14px;
+    cursor: pointer;
+}
+
+.user-menu-header:hover {
+    background-color: #f5f7fb;
+}
+
+.user-menu-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background-color: #3498db;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #ffffff;
+    font-size: 16px;
+}
+
+.user-menu-text {
+    display: flex;
+    flex-direction: column;
+}
+
+.user-menu-name {
+    font-size: 14px;
+    font-weight: 600;
+    color: #111827;
+}
+
+.user-menu-username {
+    font-size: 12px;
+    color: #6b7280;
+}
+
+.user-menu-divider {
+    height: 1px;
+    background-color: #ecf0f1;
+    margin: 0 12px;
+}
+
+.user-menu-item {
+    width: 100%;
+    background: transparent;
+    border: none;
+    padding: 10px 14px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 14px;
+    cursor: pointer;
+    color: #2c3e50;
+    text-align: left;
+}
+
+.user-menu-item i {
+    width: 18px;
+    text-align: center;
+    color: #7f8c8d;
+}
+
+.user-menu-item:hover {
+    background-color: #f5f7fb;
+}
 
 /* ========== DESKTOP ========== */
+@media (max-width: 1440px) {
+    .hamburger {
+        display: block;
+    }
+}
 
+/* ========== DESKTOP ========== */
 @media (max-width: 1024px) {
     .stats {
         grid-template-columns: repeat(2, 1fr);
@@ -659,7 +751,6 @@ th {
     .main-content,
     .main-content.collapsed {
         margin-left: 0;
-        /* content always full width on mobile */
     }
 
     .stats {
@@ -677,5 +768,19 @@ th {
     .modal-container {
         margin: 0 16px;
         max-width: 100%;
+    }
+}
+
+@media (max-width: 400px) {
+    .user-menu.open {
+        margin: 0 !important;
+        min-width: 100%;
+        left: 0px !important;
+        right: 0px !important;
+        padding: 0 10px;
+    }
+
+    .user-menu .user-menu-card {
+        min-width: 100%;
     }
 }
