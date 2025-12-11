@@ -41,7 +41,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function normalize(value) {
     // <<< FILTERS
-    return String(value ?? "").toLowerCase();
+    return String(value ?? "").toLowerCase()?.trim();
   }
 
   /* -------------------------------------------------------
@@ -169,12 +169,6 @@ document.addEventListener("DOMContentLoaded", () => {
    * -----------------------------------------------------*/
   if (addBtn) {
     addBtn.addEventListener("click", async () => {
-      const roleTypeOptions = window.createSelectOptions(window.getRoleTypes());
-      const identificationTypeOptions = window.createSelectOptions(
-        window.getIdentificationTypes()
-      );
-      const vehicleBrands = window.getVehicleBrands();
-
       // Show form modal. onSubmit controls when it closes.
       window.showFormModal({
         title: "Add role type",

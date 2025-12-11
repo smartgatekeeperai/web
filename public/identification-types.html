@@ -1,11 +1,57 @@
-﻿<!doctype html>
+﻿<!-- public/identification-types.html -->
+<!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ID Category</title>
-</head>
-<body>
-  <h1>ID Category</h1>
-</body>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Identification Types</title>
+
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
+    />
+
+    <link rel="stylesheet" href="/css/layout.css" />
+    <link rel="stylesheet" href="/css/identification-types.css" />
+  </head>
+
+  <body data-page="identification-types">
+    <div id="app"></div>
+
+    <template id="page-content">
+      <p class="page-subtitle">List of identification types will go here.</p>
+
+      <div class="page-controls">
+        <button id="add-identificationType-btn" class="modal-btn modal-btn-primary">
+          <i class="fa fa-plus"></i>&nbsp; Add identification type
+        </button>
+      </div>
+
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th style="width: 60px">Edit</th>
+              <th class="fix-width">ID</th>
+              <th>Name</th>
+              <th style="width: 80px">Delete</th>
+            </tr>
+            <tr class="filters">
+              <th style="width: 60px"></th>
+              <th class="fix-width"><input type="text" id="filterIdentificationTypeID" placeholder="Search identification type ID"></th>
+              <th><input type="text" id="filterIdentificationTypeName" placeholder="Search identification type name"></th>
+              <th style="width: 80px"></th>
+            </tr>
+          </thead>
+          <tbody id="identification-types-tbody">
+            <!-- Filled by identification-types.js via /api/identification-types -->
+          </tbody>
+        </table>
+      </div>
+    </template>
+
+    <script src="js/layout.js"></script>
+    <script src="js/modal.js"></script>
+    <script src="js/identification-types.js"></script>
+  </body>
 </html>

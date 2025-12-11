@@ -1,0 +1,49 @@
+﻿/* Placeholder for users.css */
+
+.table-container {
+  overflow: auto;
+}
+
+.table-container table {
+  overflow: auto;
+}
+
+.table-container table thead tr {
+  position: sticky;
+  top: 0;
+}
+
+.table-container table thead tr th.fix-width,
+.table-container table tbody tr td.fix-width {
+    width: 15%!important;
+}
+
+.password-field {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.password-field input {
+  width: 100%;
+  padding-right: 36px; /* space for the eye button on the right */
+}
+
+.password-field .toggle-password-btn {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #7f8c8d;
+}
+
+.password-field .toggle-password-btn:focus {
+  outline: none;
+}

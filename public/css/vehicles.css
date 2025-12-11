@@ -13,6 +13,11 @@
   top: 0;
 }
 
+.table-container table thead tr th.col-driver:not(.show), 
+.table-container table tbody tr td.col-driver:not(.show) {
+  display: none!important;
+}
+
 .page-subtitle:not(.show), .page-controls:not(.show) {
   display: none;
 }

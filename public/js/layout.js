@@ -95,8 +95,8 @@ document.addEventListener("DOMContentLoaded", async () => {
         <li data-page="drivers"><a href="${HAS_HTML ? '/drivers.html' : 'drivers' }">Drivers</a></li>
         <li data-page="vehicles"><a href="${HAS_HTML ? '/vehicles.html' : 'vehicles' }">Vehicles</a></li>
         <li data-page="role-types"><a href="${HAS_HTML ? '/role-types.html' : 'role-types' }">Role Types</a></li>
-        <li data-page="identification-types"><a>Identification Types</a></li>
-        <li data-page="user"><a>Users</a></li>
+        <li data-page="identification-types"><a href="${HAS_HTML ? '/identification-types.html' : 'identification-types' }">Identification Types</a></li>
+        <li data-page="users"><a href="${HAS_HTML ? '/users.html' : 'users' }">Users</a></li>
         <li data-page="system-config"><a>System Config</a></li>
       </ul>
       <div class="user-profile">

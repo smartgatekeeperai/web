@@ -9,6 +9,9 @@ document.addEventListener("DOMContentLoaded", () => {
   document.querySelector(".page-subtitle").classList.add("show");
   document.querySelector(".filter-results").classList.remove("show");
   document.querySelector(".page-controls").classList.remove("show");
+  document.querySelectorAll(".col-driver").forEach((x) => {
+    x?.classList.add("show");
+  });
   if (filterDriver && filterDriverName) {
     document.querySelector(".page-subtitle").classList.remove("show");
     document.querySelector(".filter-results").classList.add("show");
@@ -16,6 +19,9 @@ document.addEventListener("DOMContentLoaded", () => {
     document
       .querySelector(".filter-results")
       .querySelector("#driver-details").innerHTML = filterDriverName;
+    document.querySelectorAll(".col-driver").forEach((x) => {
+      x?.classList.remove("show");
+    });
   } else if (
     (!filterDriver && filterDriverName) ||
     (filterDriver && !filterDriverName)
@@ -70,7 +76,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function normalize(value) {
     // <<< FILTERS
-    return String(value ?? "").toLowerCase();
+    return String(value ?? "").toLowerCase()?.trim();
   }
 
   /* -------------------------------------------------------
@@ -84,7 +90,9 @@ document.addEventListener("DOMContentLoaded", () => {
           <i class="fa fa-eye"></i>
         </button>
       </td>
-      <td>${vehicle.driver?.fullName}</td>
+      <td class="col-driver ${
+        filterDriver && filterDriverName ? "" : "show"
+      }">${vehicle.driver?.fullName}</td>
       <td>${vehicle.id}</td>
       <td>${vehicle.plateNumber}</td>
       <td>${vehicle.type}</td>
@@ -444,9 +452,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     vehicle.type.toLowerCase() === "car" ? "selected" : ""
                   } value="Car">Car</option>
                   <option ${
-                    vehicle.type.toLowerCase() === "pickup"
-                      ? "selected"
-                      : ""
+                    vehicle.type.toLowerCase() === "pickup" ? "selected" : ""
                   } value="Pickup">Pickup</option>
                   <option ${
                     vehicle.type.toLowerCase() === "utility vehicle"

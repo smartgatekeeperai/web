@@ -33,7 +33,7 @@ document.addEventListener("DOMContentLoaded", () => {
   };
 
   function normalize(value) { // <<< FILTERS
-    return String(value ?? "").toLowerCase();
+    return String(value ?? "").toLowerCase()?.trim();
   }
 
   /* -------------------------------------------------------
@@ -51,12 +51,12 @@ document.addEventListener("DOMContentLoaded", () => {
       <td>${driver.fullName}</td>
       <td class="vehicle-col">
           <div class="view-wrapper">
-            <a href="/vehicles?driver=${driver?.id}&driverName=${driver?.fullName}" class="table-icon-btn btn-view" title="View vehicle" type="button">
-              <i class="fa fa-car"></i>
-            </a>
             ${driver.vehicles?.length ? ("<ul>" +
               (driver.vehicles?.map((x, i) =>
-                `<li>${x.brand} ${x.model}${i === driver.vehicles?.length - 1 ? "" : ","}</li>`
+                `<li>
+            <a href="/vehicles?driver=${driver?.id}&driverName=${driver?.fullName}" class="table-icon-btn btn-view" title="View vehicle" type="button">
+              <i class="fa fa-car"></i>
+            </a>${x.plateNumber} ${x.brand} ${x.model}${i === driver.vehicles?.length - 1 ? "" : ","}</li>`
               ).join("\n") ?? "")
               + "</ul>") : "<span class='placeholder'>No vehicles found</span>"
             }
@@ -122,18 +122,12 @@ document.addEventListener("DOMContentLoaded", () => {
       const idTypeText = normalize(driver.identificationType);
       const idNumberText = normalize(driver.identificationNumber);
       const genderText = normalize(driver.gender);
-
-      // Build vehicles text (brand, model, plate, type)
+      // Build vehicles text (plate, brand, model merged for ALL vehicles)
       const vehiclesText = normalize(
         (driver.vehicles || [])
           .map((v) =>
-            [
-              v.brand,
-              v.model,
-              v.plateNumber,
-              v.type,
-            ]
-              .filter(Boolean)
+            [v.plateNumber, v.brand, v.model]
+              .filter(Boolean) // remove null/undefined/empty parts
               .join(" ")
           )
           .join(" ")

@@ -3,6 +3,7 @@ import Groq from "groq-sdk";
 import { imageSize } from "image-size";
 import camelcaseKeys from "camelcase-keys";
 import NodeCache from "node-cache";
+import bcrypt from "bcryptjs";
 
 // Groq OCR model (recommended for OCR)
 const OCR_MODEL = "meta-llama/llama-4-scout-17b-16e-instruct";
@@ -73,6 +74,16 @@ export function createControllers({ pool }) {
     }
   }
 
+  async function hashPassword(plain) {
+    const bcryptRounds = !isNaN(Number(process.env.BCRYPT_SALT_ROUNDS)) ? Number(process.env.BCRYPT_SALT_ROUNDS) : 10;
+    const salt = await bcrypt.genSalt(bcryptRounds);
+    return bcrypt.hash(plain, salt);
+  }
+
+  function compare(storedHash, plain) {
+    return bcrypt.compare(plain, storedHash);
+  }
+
   // ------------ Vehicle Brand and Model (no cache) ------------
   async function getVehicleBrands(req, res) {
     try {
@@ -118,7 +129,7 @@ export function createControllers({ pool }) {
       }
 
       const rows = await dbQuery(
-        `SELECT * FROM dbo."IdentificationType" WHERE "Active" = true ORDER BY "Id" ASC`
+        `SELECT * FROM dbo."IdentificationType" WHERE "Active" = true ORDER BY GREATEST("CreatedAt", "UpdatedAt") DESC`
       );
       const data = camelcaseKeys(rows);
       crudCache.set(CACHE_KEYS.identificationTypes, data);
@@ -209,7 +220,7 @@ export function createControllers({ pool }) {
       }
 
       const rows = await dbQuery(
-        `SELECT * FROM dbo."RoleType" WHERE "Active" = true ORDER BY "RoleType" ASC`
+        `SELECT * FROM dbo."RoleType" WHERE "Active" = true ORDER BY GREATEST("CreatedAt", "UpdatedAt") DESC`
       );
       const data = camelcaseKeys(rows);
       crudCache.set(CACHE_KEYS.roleTypes, data);
@@ -574,12 +585,15 @@ export function createControllers({ pool }) {
       }
 
       const rows = await dbQuery(
-        `SELECT "UserId", "Name", "Username", "Active" FROM dbo."User" WHERE "Active" = true ORDER BY "UserId" ASC`
+        `SELECT * FROM dbo."User" WHERE "Active" = true ORDER BY GREATEST("CreatedAt", "UpdatedAt") DESC`
       );
       const data = camelcaseKeys(rows);
       crudCache.set(CACHE_KEYS.users, data);
 
-      return res.json({ success: true, data });
+      return res.json({ success: true, data: data.map(x=> {
+        delete x?.password;
+        return x;
+      }) });
     } catch (err) {
       console.error(err);
       return res.status(500).json({
@@ -589,30 +603,85 @@ export function createControllers({ pool }) {
     }
   }
 
-  async function upsertUser(req, res) {
-    const { userId, name, username, password } = req.body || {};
+  async function loginUser(req, res) {
+    const { username, password } = req.body || {};
     try {
+
+      if(!username) {
+        return res.status(401).json({ success: false, message: "Username should not be null or empty" });
+      }
+
+      if(!password) {
+        return res.status(401).json({ success: false, message: "Password should not be null or empty" });
+      }
+
+      const rows = await dbQuery(
+        `SELECT * FROM dbo."User" WHERE "Username" = $1 AND "Active" = true`,
+        [username]
+      );
+
+      if(!rows.length) {
+        return res.status(401).json({ success: false, message: "User not found" });
+      }
+
+      const user = camelcaseKeys(rows[0]);
+
+      const isMatch = await compare(user.password , password);
+      if (!isMatch) {
+        return res.status(401).json({ success: false, message: "Password incorrect" });
+      }
+      delete user.password;
+
+      return res.json({ success: true, data: user });
+    } catch (err) {
+      console.error(err);
+      return res.status(500).json({
+        success: false,
+        message: "Failed to login User",
+      });
+    }
+  }
+
+  async function upsertUser(req, res) {
+    const { id, name, username, password } = req.body || {};
+    try {
+      if(!username) {
+        return res.status(401).json({ success: false, message: "Username should not be null or empty" });
+      }
+
+      if(!name) {
+        return res.status(401).json({ success: false, message: "Name should not be null or empty" });
+      }
       let rows;
-      if (userId) {
+      if (id) {
         rows = await dbQuery(
           `UPDATE dbo."User" 
-           SET "Name" = $1, "Username" = $2, "Password" = $3, "UpdatedAt" = NOW()
-           WHERE "UserId" = $4 
-           RETURNING "UserId", "Name", "Username", "Active" `,
-          [name, username, password, userId]
+           SET "Name" = $1, "Username" = $2, "UpdatedAt" = NOW()
+           WHERE "Id" = $3 
+           RETURNING *`,
+          [name, username, id]
         );
       } else {
+
+        if(!password) {
+          return res.status(401).json({ success: false, message: "Password should not be null or empty" });
+        }
+        const passwordHash = await hashPassword(password);
         rows = await dbQuery(
           `INSERT INTO dbo."User" ("Name", "Username", "Password") 
            VALUES ($1, $2, $3) 
-           RETURNING "UserId", "Name", "Username", "Active"`,
-          [name, username, password]
+           RETURNING *`,
+          [name, username, passwordHash]
         );
       }
 
       invalidateCachePrefix(CACHE_KEYS.users);
 
-      return res.json({ success: true, data: camelcaseKeys(rows[0]) });
+      const user = camelcaseKeys(rows[0]);
+
+      delete user?.password;
+
+      return res.json({ success: true, data:  user});
     } catch (err) {
       console.error(err);
       if (err?.message?.includes("duplicate")) {
@@ -628,14 +697,110 @@ export function createControllers({ pool }) {
     }
   }
 
+  async function updateUserPassword(req, res) {
+    const { id } = req.params;
+    const { password } = req.body || {};
+    try {
+
+      if(!id) {
+        return res.status(401).json({ success: false, message: "User id should not be null or empty" });
+      }
+
+      if(!password) {
+        return res.status(401).json({ success: false, message: "Password should not be null or empty" });
+      }
+
+      const passwordHash = await hashPassword(password);
+      let rows = await dbQuery(
+        `UPDATE dbo."User" 
+           SET "Password" = $1, "UpdatedAt" = NOW()
+           WHERE "Id" = $2 
+           RETURNING *`,
+        [passwordHash, id]
+      );
+
+      invalidateCachePrefix(CACHE_KEYS.users);
+
+      const user = camelcaseKeys(rows[0]);
+
+      delete user?.password;
+
+      return res.json({ success: true, data: user });
+    } catch (err) {
+      console.error(err);
+      return res.status(500).json({
+        success: false,
+        message: "Failed to update user password",
+      });
+    }
+  }
+
+  async function changeUserPassword(req, res) {
+    const { id } = req.params;
+    const { oldPassword, password } = req.body || {};
+    try {
+
+      if(!id) {
+        return res.status(401).json({ success: false, message: "User id should not be null or empty" });
+      }
+
+      if(!oldPassword) {
+        return res.status(401).json({ success: false, message: "Old password should not be null or empty" });
+      }
+
+      if(!password) {
+        return res.status(401).json({ success: false, message: "Password should not be null or empty" });
+      }
+
+      let rows = await dbQuery(
+        `SELECT * FROM dbo."User" WHERE "Id" = $1 AND "Active" = true`,
+        [id]
+      );
+
+      if(!rows.length) {
+        return res.status(401).json({ success: false, message: "User not found" });
+      }
+
+      let user = camelcaseKeys(rows[0]);
+
+      const isMatch = await compare(user.password , oldPassword);
+      if (!isMatch) {
+        return res.status(401).json({ success: false, message: "Old password incorrect" });
+      }
+
+      const passwordHash = await hashPassword(password);
+      rows = await dbQuery(
+        `UPDATE dbo."User" 
+           SET "Password" = $1, "UpdatedAt" = NOW()
+           WHERE "Id" = $2 
+           RETURNING *`,
+        [passwordHash, id]
+      );
+
+      invalidateCachePrefix(CACHE_KEYS.users);
+
+      user = camelcaseKeys(rows[0]);
+
+      delete user?.password;
+
+      return res.json({ success: true, data: user });
+    } catch (err) {
+      console.error(err);
+      return res.status(500).json({
+        success: false,
+        message: "Failed to update user password",
+      });
+    }
+  }
+
   async function deleteUser(req, res) {
     const { id } = req.params;
     try {
       const rows = await dbQuery(
         `UPDATE dbo."User" 
          SET "Active" = false, "UpdatedAt" = NOW() 
-         WHERE "UserId" = $1 
-         RETURNING "UserId", "Name", "Username", "Active" `,
+         WHERE "Id" = $1 
+         RETURNING "Id", "Name", "Username", "Active" `,
         [id]
       );
       if (!camelcaseKeys(rows[0])) {
@@ -906,7 +1071,10 @@ export function createControllers({ pool }) {
     upsertDriver,
     deleteDriver,
     getUsers,
+    loginUser,
     upsertUser,
+    updateUserPassword,
+    changeUserPassword,
     deleteUser,
     getVehicles,
     upsertVehicle,

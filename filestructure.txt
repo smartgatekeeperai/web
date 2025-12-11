@@ -17,7 +17,7 @@
         |-- logs.css
         |-- role-types.css
         |-- system-config.css
-        |-- user.css
+        |-- users.css
         |-- vehicles.css
     |-- drivers.html
     |-- identification-types.html
@@ -40,12 +40,12 @@
         |-- modal.js
         |-- role-types.js
         |-- system-config.js
-        |-- user.js
+        |-- users.js
         |-- vehicles.js
     |-- logs.html
     |-- role-types.html
     |-- system-config.html
-    |-- user.html
+    |-- users.html
     |-- vehicles.html
 |-- README.md
 |-- routes.js

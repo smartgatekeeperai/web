@@ -61,6 +61,9 @@ export function registerRoutes(app, { pool, webRoutes, publicDir }) {
 
   app.get("/api/users", controllers.getUsers);
   app.post("/api/users", controllers.upsertUser);
+  app.post("/api/users/login", controllers.loginUser);
+  app.put("/api/users/:id/update-password", controllers.updateUserPassword);
+  app.put("/api/users/:id/change-password", controllers.changeUserPassword);
   app.delete("/api/users/:id", controllers.deleteUser);
 
   app.get("/api/vehicles", controllers.getVehicles);
