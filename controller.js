@@ -262,7 +262,7 @@ export function createControllers({ pool }) {
     const { id } = req.params;
     try {
       const rows = await dbQuery(
-        `UPDATE dbo."RoleType" SET "Active", "UpdatedAt" = NOW() = false WHERE "Id" = $1 RETURNING *`,
+        `UPDATE dbo."RoleType" SET "Active" = false, "UpdatedAt" = NOW() WHERE "Id" = $1 RETURNING *`,
         [id]
       );
       if (!camelcaseKeys(rows[0])) {
@@ -285,12 +285,12 @@ export function createControllers({ pool }) {
   async function getDrivers(req, res) {
     try {
       // Read limit/offset from query
-      let { limit, offset, driver } = req.query;
+      let { limit, offset } = req.query;
 
       limit = parseInt(limit, 10);
       offset = parseInt(offset, 10);
 
-      const cacheKey = `${CACHE_KEYS.drivers}:${limit}:${offset}:${driver}`;
+      const cacheKey = `${CACHE_KEYS.drivers}:${limit}:${offset}`;
       const cached = crudCache.get(cacheKey);
       if (cached) {
         return res.json({

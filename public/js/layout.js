@@ -94,7 +94,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         <li data-page="logs"><a>Logs</a></li>
         <li data-page="drivers"><a href="${HAS_HTML ? '/drivers.html' : 'drivers' }">Drivers</a></li>
         <li data-page="vehicles"><a href="${HAS_HTML ? '/vehicles.html' : 'vehicles' }">Vehicles</a></li>
-        <li data-page="role"><a>Role</a></li>
+        <li data-page="role-types"><a href="${HAS_HTML ? '/role-types.html' : 'role-types' }">Role Types</a></li>
         <li data-page="identification-types"><a>Identification Types</a></li>
         <li data-page="user"><a>Users</a></li>
         <li data-page="system-config"><a>System Config</a></li>
@@ -196,8 +196,8 @@ document.addEventListener("DOMContentLoaded", async () => {
         case "logs":
           // href = "/logs.html";
           break;
-        case "role":
-          // href = "/role.html";
+        case "role-types":
+          // href = "/role-types.html";
           break;
         case "system-config":
           // href = "/system-config.html";
@@ -266,7 +266,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   //data helpers
   window.getAIURL = () => {
-    return `${isProd ? 'https://smartgatekeeperai-vehicle-detector.hf.space' : 'http://192.168.254.103:8000'}`;
+    return `${isProd ? 'https://smartgatekeeperai-vehicle-detector.hf.space' : 'http://10.182.54.46:8000'}`;
   }
   window.getRoleTypes = function () {
     return (localStorage.getItem("role-types") ?? "")?.split(",")?.map(x=> x.trim()) ?? [];

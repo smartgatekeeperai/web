@@ -1,0 +1,19 @@
+﻿/* Placeholder for role-types.css */
+
+.table-container {
+  overflow: auto;
+}
+
+.table-container table {
+  overflow: auto;
+}
+
+.table-container table thead tr {
+  position: sticky;
+  top: 0;
+}
+
+.table-container table thead tr th.fix-width,
+.table-container table tbody tr td.fix-width {
+    width: 15%!important;
+}

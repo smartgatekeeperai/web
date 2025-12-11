@@ -86,7 +86,7 @@ document.addEventListener("DOMContentLoaded", () => {
     tbody.appendChild(tr);
   }
 
-  // Generic renderer that can render any subset of drivers // <<< FILTERS
+  // Generic renderer that can render any subset of data // <<< FILTERS
   function renderRows(rows) {
     if (!rows || !rows.length) {
       renderEmptyRow("No drivers match filters.");
@@ -162,7 +162,7 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   /* -------------------------------------------------------
-   * LOAD DRIVERS FROM API
+   * LOAD FROM API
    * -----------------------------------------------------*/
   async function loadDrivers() {
     tbody.innerHTML = "";
@@ -209,7 +209,7 @@ document.addEventListener("DOMContentLoaded", () => {
   loadDrivers();
 
   /* -------------------------------------------------------
-   * ADD DRIVER
+   * ADD DATA
    * -----------------------------------------------------*/
   if (addBtn) {
     addBtn.addEventListener("click", async () => {
