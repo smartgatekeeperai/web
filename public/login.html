@@ -1,0 +1,78 @@
+﻿<!-- public/login.html -->
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SmartGateKeeper AI | Login</title>
+
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
+    />
+
+    <link rel="stylesheet" href="/css/layout.css" />
+    <link rel="stylesheet" href="/css/login.css" />
+  </head>
+
+  <body data-page="login">
+    <div id="app"></div>
+
+    <template id="page-content">
+      <div class="login-wrapper">
+        <div class="login-card">
+          <div class="login-header">
+            <div class="login-logo">SmartGateKeeper AI</div>
+            <p class="login-subtitle">Sign in to continue</p>
+          </div>
+
+          <form class="login-form" id="login-form">
+            <label>
+              Username
+              <input
+                type="text"
+                id="login-username"
+                placeholder="Enter username"
+                autocomplete="username"
+                required
+              />
+            </label>
+
+            <label>
+              Password
+              <div class="password-field">
+                <input
+                  type="password"
+                  id="login-password"
+                  placeholder="Enter password"
+                  autocomplete="current-password"
+                  required
+                />
+                <button
+                  type="button"
+                  class="password-toggle"
+                  id="toggle-password"
+                  aria-label="Show password"
+                  title="Show password"
+                >
+                  <i class="fa-solid fa-eye"></i>
+                </button>
+              </div>
+            </label>
+
+            <button type="submit" class="login-btn">
+              <i class="fas fa-right-to-bracket"></i>
+              Sign In
+            </button>
+          </form>
+
+          <div class="login-footer">© 2025 SmartGateKeeper AI</div>
+        </div>
+      </div>
+    </template>
+
+    <script src="/js/layout.js"></script>
+    <script src="/js/modal.js"></script>
+    <script src="/js/login.js"></script>
+  </body>
+</html>

@@ -258,8 +258,6 @@ document.addEventListener("DOMContentLoaded", () => {
   /* ------------------------------------------------
    * Live Activity Feed (Live + History filter)
    * ------------------------------------------------*/
-  const aiURL = window.getAIURL();
-  console.log("aiURL", aiURL);
   const activityList = document.getElementById("activityList");
   const activityModeChips = document.getElementById("activityModeChips");
   const activityHistoryFilters = document.getElementById(

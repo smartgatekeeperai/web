@@ -590,6 +590,43 @@ th {
     border-color: #3498db;
 }
 
+
+.password-field {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.password-field input {
+    width: 100%;
+    padding-right: 40px; /* space for eye button */
+}
+
+.password-field .toggle-password-btn {
+    position: absolute;
+    right: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 8px;
+    color: #7f8c8d;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.password-field .toggle-password-btn:hover {
+    background: rgba(0, 0, 0, 0.05);
+    color: #111827;
+}
+
+.password-field .toggle-password-btn i {
+    pointer-events: none;
+}
+
 /* Autocomplete styles for vehicle brand */
 .autocomplete-wrapper {
     position: relative;
