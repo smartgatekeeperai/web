@@ -5,9 +5,6 @@ import camelcaseKeys from "camelcase-keys";
 import NodeCache from "node-cache";
 import bcrypt from "bcryptjs";
 
-// Groq OCR model (recommended for OCR)
-const OCR_MODEL = "meta-llama/llama-4-scout-17b-16e-instruct";
-
 // Simple in-memory cache for CRUD
 // stdTTL = 60s, tweak as you like
 const crudCache = new NodeCache({
