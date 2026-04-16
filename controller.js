@@ -1,6 +1,4 @@
 //controller.js
-import Groq from "groq-sdk";
-import { imageSize } from "image-size";
 import camelcaseKeys from "camelcase-keys";
 import NodeCache from "node-cache";
 import bcrypt from "bcryptjs";
@@ -79,6 +77,81 @@ export function createControllers({ pool }) {
 
   function compare(storedHash, plain) {
     return bcrypt.compare(plain, storedHash);
+  }
+
+
+    // ------------ Public Safe Config ------------
+  async function getPublicConfig(req, res) {
+    try {
+      const rawNames = req.query.names;
+      const names = String(rawNames || "")
+        .split(",")
+        .map((x) => x.trim())
+        .filter(Boolean);
+
+      if (!names.length) {
+        return res.status(400).json({
+          success: false,
+          message: "Missing config names",
+        });
+      }
+
+      const allowed = {
+        pusher: () => {
+          const nodeEnv = String(process.env.NODE_ENV || "").toLowerCase();
+          const vercel = process.env.VERCEL === "1";
+
+          const pusherKey = String(process.env.PUSHER_KEY || "").trim();
+          const pusherCluster = String(process.env.PUSHER_CLUSTER || "ap1").trim();
+          const pusherHost = String(process.env.PUSHER_HOST || "").trim();
+          const pusherPort = Number(process.env.PUSHER_PORT || 6001);
+          const useLocalRequested =
+            String(process.env.USE_LOCAL_PUSHER || "false").toLowerCase() === "true";
+
+          const isProduction = nodeEnv === "production" || vercel;
+          const useLocal = useLocalRequested && !isProduction;
+
+          if (useLocal) {
+            return {
+              mode: "local",
+              key: pusherKey,
+              cluster: pusherCluster,
+              wsHost: pusherHost || req.hostname,
+              wsPort: pusherPort,
+              wssPort: pusherPort,
+              forceTLS: false,
+              enabledTransports: ["ws", "wss"],
+              disableStats: true,
+            };
+          }
+
+          return {
+            mode: "cloud",
+            key: pusherKey,
+            cluster: pusherCluster,
+            forceTLS: true,
+          };
+        },
+      };
+
+      const data = {};
+
+      for (const name of names) {
+        if (!allowed[name]) continue;
+        data[name] = allowed[name]();
+      }
+
+      return res.json({
+        success: true,
+        data,
+      });
+    } catch (err) {
+      console.error(err);
+      return res.status(500).json({
+        success: false,
+        message: "Failed to load public config",
+      });
+    }
   }
 
   // ------------ Vehicle Brand and Model (no cache) ------------
@@ -1057,6 +1130,7 @@ export function createControllers({ pool }) {
 
   // expose everything to routes.js
   return {
+    getPublicConfig,
     getVehicleBrands,
     getIdentificationTypes,
     upsertIdentificationType,
