@@ -4,8 +4,11 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": "nodemon --exec node index.js",
-    "start": "node index.js"
+    "dev:web": "nodemon --exec node index.js",
+    "start:web": "node index.js",
+    "start:soketi": "cmd /c \"set SOKETI_DEFAULT_APP_ID=2086487&& set SOKETI_DEFAULT_APP_KEY=437af9281329a965a6f7&& set SOKETI_DEFAULT_APP_SECRET=c11adaa371061faed16b&& soketi start --port=6001 --address=0.0.0.0\"",
+    "dev": "concurrently \"npm run start:soketi\" \"npm run dev:web\"",
+    "start": "concurrently \"npm run start:soketi\" \"npm run start:web\""
   },
   "keywords": [],
   "author": "",
@@ -19,14 +22,15 @@
     "dotenv": "^17.2.3",
     "express": "^5.1.0",
     "glob": "^13.0.0",
-    "groq-sdk": "^0.37.0",
-    "image-size": "^2.0.2",
     "multer": "^2.0.2",
     "node-cache": "^5.1.2",
     "pg": "^8.16.3",
     "pusher": "^5.2.0"
   },
   "devDependencies": {
+    "@soketi/soketi": "^1.6.1",
+    "concurrently": "^9.0.1",
+    "cross-env": "^7.0.3",
     "nodemon": "^3.1.11"
   }
 }

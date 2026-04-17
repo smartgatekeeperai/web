@@ -1,206 +1,253 @@
-﻿<!DOCTYPE html>
+﻿<!-- public/index.html -->
+
+<!DOCTYPE html>
 <html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Smart Gate Keeper AI - Dashboard</title>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
+    />
+    <link rel="stylesheet" href="/css/layout.css" />
+    <link rel="stylesheet" href="css/dashboard.css" />
+  </head>
 
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Smart Gate Keeper AI - Dashboard</title>
-  <!-- Font Awesome CDN for icons -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
-  <link rel="stylesheet" href="/css/layout.css" />
-  <link rel="stylesheet" href="css/dashboard.css">
-</head>
+  <body data-page="dashboard">
+    <div id="app"></div>
 
-<body data-page="dashboard">
-  <div id="app"></div>
-
-  <template id="page-content">
-    <!-- STATS -->
-    <div class="stats">
-      <div class="stat-card">
-        <i class="fas fa-car icon"></i>
-        <h3 id="totalVehicles">1,234</h3>
-        <p>Total Vehicles Today</p>
-      </div>
-      <div class="stat-card">
-        <i class="fas fa-chart-line icon"></i>
-        <h3 id="avgVehiclesDaily">980</h3>
-        <p>Average Vehicles Daily</p>
-      </div>
-      <div class="stat-card">
-        <i class="fas fa-id-card icon"></i>
-        <h3 id="registeredVehicles">3,560</h3>
-        <p>Registered Vehicles</p>
-      </div>
-      <div class="stat-card">
-        <i class="fas fa-clock icon"></i>
-        <h3>8-10 AM</h3>
-        <p>Peak Hours</p>
-      </div>
-    </div>
-
-    <!-- QUICK CAMERA PREVIEW + GATE STATUS -->
-    <div class="widgets-section">
-      <div class="widget">
-        <h4>Quick Camera Preview</h4>
-        <div class="camera-previews">
-          <div class="camera-card">
-            <div class="camera-thumb">
-              <img src="images/no-video.png" alt="Front Camera" />
-              <span class="camera-label-chip">Front camera</span>
-            </div>
-            <div class="camera-meta">
-              <span class="camera-name">Front camera</span>
-              <span class="camera-status-pill online">
-                <i class="fas fa-circle"></i> Online
-              </span>
-            </div>
-          </div>
-
-          <div class="camera-card">
-            <div class="camera-thumb">
-              <img src="images/no-video.png" alt="Back Camera" />
-              <span class="camera-label-chip">Back camera</span>
-            </div>
-            <div class="camera-meta">
-              <span class="camera-name">Back camera</span>
-              <span class="camera-status-pill online">
-                <i class="fas fa-circle"></i> Online
-              </span>
-            </div>
-          </div>
+    <template id="page-content">
+      <div class="stats">
+        <div class="stat-card">
+          <i class="fas fa-car icon"></i>
+          <h3 id="totalVehicles">1,234</h3>
+          <p>Total Vehicles Today</p>
+        </div>
+        <div class="stat-card">
+          <i class="fas fa-chart-line icon"></i>
+          <h3 id="avgVehiclesDaily">980</h3>
+          <p>Average Vehicles Daily</p>
+        </div>
+        <div class="stat-card">
+          <i class="fas fa-id-card icon"></i>
+          <h3 id="registeredVehicles">3,560</h3>
+          <p>Registered Vehicles</p>
+        </div>
+        <div class="stat-card">
+          <i class="fas fa-clock icon"></i>
+          <h3>8-10 AM</h3>
+          <p>Peak Hours</p>
         </div>
       </div>
 
-      <div class="widget">
-        <h4>Gate Status</h4>
-        <div class="gate-label" style="margin-bottom: 8px;">
-          <span class="gate-subtitle">
-            Gate registration check
-          </span>
-        </div>
+      <div class="widgets-section">
+        <div class="widget">
+          <h4>Quick Camera Preview</h4>
 
-        <div class="gate-map">
-          <div class="gate-map-body">
-            <!-- LEFT: flat floor + car image + gate status band -->
-            <div class="gate-visual">
-              <div class="gate-area">
-                <div class="gate-car-wrapper">
-                  <!-- swap src with your actual top-view vehicle image -->
-                  <img class="gate-vehicle-img" alt="Current vehicle top view" />
-                </div>
+          <div class="camera-previews">
+            <div class="camera-card" data-slot="slot_1">
+              <div class="camera-thumb">
+                <img
+                  src="images/no-video.png"
+                  alt="Camera Slot 1"
+                  data-camera-image
+                />
+                <span class="camera-label-chip">Camera Slot 1</span>
+              </div>
 
-                <!-- Gate registration status:
-                       use .registered or .not-registered and change text -->
-                <div class="gate-status-band">
-                  <span class="gate-status-label">NO VEHICLE</span>
-                </div>
+              <div class="camera-meta camera-meta-top">
+                <span class="camera-name">Camera Slot 1</span>
+                <span class="camera-status-pill offline" data-camera-status>
+                  <i class="fas fa-circle"></i> Offline
+                </span>
+              </div>
+
+              <div class="camera-pair-row">
+                <select class="camera-stream-select" data-camera-select>
+                  <option value="">Not paired</option>
+                </select>
+                <button
+                  type="button"
+                  class="camera-refresh-btn"
+                  data-camera-refresh
+                  title="Refresh stream list"
+                >
+                  <i class="fas fa-rotate-right"></i>
+                </button>
+              </div>
+
+              <div class="camera-assigned-row">
+                <span class="camera-assigned-label">Assigned stream:</span>
+                <span class="camera-assigned-value" data-camera-assigned>
+                  Not paired
+                </span>
               </div>
             </div>
 
-            <!-- RIGHT: vehicle / driver details + gate meta -->
-            <div class="gate-info">
-              <ul class="gate-info-list">
-                <li>
-                  <div class="gate-info-item-label">Plate number</div>
-                  <div class="gate-info-item-value"></div>
-                </li>
-                <li>
-                  <div class="gate-info-item-label">Driver</div>
-                  <div class="gate-info-item-value"></div>
-                </li>
-                <li>
-                  <div class="gate-info-item-label">Type</div>
-                  <div class="gate-info-item-value"></div>
-                </li>
-                <li>
-                  <div class="gate-info-item-label">Brand</div>
-                  <div class="gate-info-item-value"></div>
-                </li>
-                <li>
-                  <div class="gate-info-item-label">model</div>
-                  <div class="gate-info-item-value"></div>
-                </li>
-              </ul>
+            <div class="camera-card" data-slot="slot_2">
+              <div class="camera-thumb">
+                <img
+                  src="images/no-video.png"
+                  alt="Camera Slot 2"
+                  data-camera-image
+                />
+                <span class="camera-label-chip">Camera Slot 2</span>
+              </div>
 
-              <!-- <div class="gate-info-meta">
-                  Gate status: <strong>Registered</strong> · Last check:
-                  <strong>12s ago</strong>
-                </div> -->
+              <div class="camera-meta camera-meta-top">
+                <span class="camera-name">Camera Slot 2</span>
+                <span class="camera-status-pill offline" data-camera-status>
+                  <i class="fas fa-circle"></i> Offline
+                </span>
+              </div>
+
+              <div class="camera-pair-row">
+                <select class="camera-stream-select" data-camera-select>
+                  <option value="">Not paired</option>
+                </select>
+                <button
+                  type="button"
+                  class="camera-refresh-btn"
+                  data-camera-refresh
+                  title="Refresh stream list"
+                >
+                  <i class="fas fa-rotate-right"></i>
+                </button>
+              </div>
+
+              <div class="camera-assigned-row">
+                <span class="camera-assigned-label">Assigned stream:</span>
+                <span class="camera-assigned-value" data-camera-assigned>
+                  Not paired
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="widget">
+          <h4>Gate Status</h4>
+          <div class="gate-label" style="margin-bottom: 8px">
+            <span class="gate-subtitle"> Gate registration check </span>
+          </div>
+
+          <div class="gate-map">
+            <div class="gate-map-body">
+              <div class="gate-visual">
+                <div class="gate-area">
+                  <div class="gate-car-wrapper">
+                    <img
+                      class="gate-vehicle-img"
+                      alt="Current vehicle top view"
+                    />
+                  </div>
+
+                  <div class="gate-status-band">
+                    <span class="gate-status-label">NO VEHICLE</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="gate-info">
+                <ul class="gate-info-list">
+                  <li>
+                    <div class="gate-info-item-label">Plate number</div>
+                    <div class="gate-info-item-value"></div>
+                  </li>
+                  <li>
+                    <div class="gate-info-item-label">Driver</div>
+                    <div class="gate-info-item-value"></div>
+                  </li>
+                  <li>
+                    <div class="gate-info-item-label">Type</div>
+                    <div class="gate-info-item-value"></div>
+                  </li>
+                  <li>
+                    <div class="gate-info-item-label">Brand</div>
+                    <div class="gate-info-item-value"></div>
+                  </li>
+                  <li>
+                    <div class="gate-info-item-label">model</div>
+                    <div class="gate-info-item-value"></div>
+                  </li>
+                </ul>
+              </div>
             </div>
           </div>
         </div>
       </div>
-    </div>
 
-    <!-- SEARCH + LIVE ACTIVITY FEED -->
-    <div class="search-container">
-      <div class="search-bar">
-        <input type="text" id="searchInput" placeholder="Search activity (plate, driver, vehicle type)..." />
-        <i class="fas fa-search search-icon"></i>
-      </div>
-    </div>
-
-    <div class="activity-feed">
-      <div class="activity-header">
-        <div class="activity-header-left">
-          <span class="activity-header-title">Live Activity Feed</span>
-          <span class="activity-header-sub">Real-time registration checks from gate</span>
-        </div>
-        <div class="activity-header-right">
-          <span class="activity-mode-pill" id="activityModePill">
-            <span class="live-dot on" id="liveDot"></span>
-            <span id="activityModeLabel">Live · Last 20 events</span>
-          </span>
+      <div class="search-container">
+        <div class="search-bar">
+          <input
+            type="text"
+            id="searchInput"
+            placeholder="Search activity (plate, driver, vehicle type)..."
+          />
+          <i class="fas fa-search search-icon"></i>
         </div>
       </div>
 
-      <!-- Mode + history filters -->
-      <div class="activity-filter-bar">
-        <div class="chip-group" id="activityModeChips">
-          <button class="chip active" data-mode="live">Live</button>
-          <button class="chip" data-mode="history">History</button>
-        </div>
-        <div class="activity-history-filters" id="activityHistoryFilters">
-          <div class="chip-group" id="activityResolutionChips">
-            <button class="chip active" data-resolution="hour">Hourly</button>
-            <button class="chip" data-resolution="day">Daily</button>
-            <button class="chip" data-resolution="week">Weekly</button>
+      <div class="activity-feed">
+        <div class="activity-header">
+          <div class="activity-header-left">
+            <span class="activity-header-title">Live Activity Feed</span>
+            <span class="activity-header-sub"
+              >Real-time registration checks from gate</span
+            >
           </div>
-          <select id="activityRangeSelect" class="chart-range-select"></select>
-        </div>
-      </div>
-
-      <div class="activity-list" id="activityList"></div>
-    </div>
-
-    <!-- PEAK VEHICLE FLOW (Chart.js) -->
-    <div class="widget">
-      <div class="chart-header">
-        <h4>Peak Vehicle Flow</h4>
-        <div class="chart-filters">
-          <div class="chip-group" id="resolutionChips">
-            <button class="chip active" data-resolution="hour">Hourly</button>
-            <button class="chip" data-resolution="day">Daily</button>
-            <button class="chip" data-resolution="week">Weekly</button>
+          <div class="activity-header-right">
+            <span class="activity-mode-pill" id="activityModePill">
+              <span class="live-dot on" id="liveDot"></span>
+              <span id="activityModeLabel">Live · Last 20 events</span>
+            </span>
           </div>
-          <select id="rangeSelect" class="chart-range-select"></select>
         </div>
+
+        <div class="activity-filter-bar">
+          <div class="chip-group" id="activityModeChips">
+            <button class="chip active" data-mode="live">Live</button>
+            <button class="chip" data-mode="history">History</button>
+          </div>
+          <div class="activity-history-filters" id="activityHistoryFilters">
+            <div class="chip-group" id="activityResolutionChips">
+              <button class="chip active" data-resolution="hour">Hourly</button>
+              <button class="chip" data-resolution="day">Daily</button>
+              <button class="chip" data-resolution="week">Weekly</button>
+            </div>
+            <select id="activityRangeSelect" class="chart-range-select"></select>
+          </div>
+        </div>
+
+        <div class="activity-list" id="activityList"></div>
       </div>
 
-      <div class="peak-hours">
-        <canvas id="peakHoursChart"></canvas>
+      <div class="widget">
+        <div class="chart-header">
+          <h4>Peak Vehicle Flow</h4>
+          <div class="chart-filters">
+            <div class="chip-group" id="resolutionChips">
+              <button class="chip active" data-resolution="hour">Hourly</button>
+              <button class="chip" data-resolution="day">Daily</button>
+              <button class="chip" data-resolution="week">Weekly</button>
+            </div>
+            <select id="rangeSelect" class="chart-range-select"></select>
+          </div>
+        </div>
+
+        <div class="peak-hours">
+          <canvas id="peakHoursChart"></canvas>
+        </div>
+
+        <div class="chart-legend" id="chartLegend"></div>
       </div>
+    </template>
 
-      <div class="chart-legend" id="chartLegend"></div>
-    </div>
-  </template>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <script src="https://js.pusher.com/8.2/pusher.min.js"></script>
-  <script src="js/layout.js"></script>
-  <script src="js/modal.js"></script>
-  <script src="js/dashboard.js"></script>
-
-</body>
-
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://js.pusher.com/8.2/pusher.min.js"></script>
+    <script src="js/layout.js"></script>
+    <script src="js/modal.js"></script>
+    <script src="js/dashboard.js"></script>
+  </body>
 </html>

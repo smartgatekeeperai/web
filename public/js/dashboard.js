@@ -1,9 +1,6 @@
-﻿/* Placeholder for dashboard.css */
+﻿// public/js/dashboard.js
 
-document.addEventListener("DOMContentLoaded", () => {
-  /* ------------------------------------------------
-   * Shared time resolution config
-   * ------------------------------------------------*/
+document.addEventListener("DOMContentLoaded", async () => {
   const RESOLUTION_CONFIG = {
     hour: {
       unit: "hours",
@@ -37,10 +34,7 @@ document.addEventListener("DOMContentLoaded", () => {
     },
   };
 
-  /* ------------------------------------------------
-   * Peak Vehicle Flow (Chart.js)
-   * ------------------------------------------------*/
-  const ctx = document.getElementById("peakHoursChart").getContext("2d");
+  const ctx = document.getElementById("peakHoursChart")?.getContext("2d");
   const legendContainer = document.getElementById("chartLegend");
   const rangeSelect = document.getElementById("rangeSelect");
   const chipsContainer = document.getElementById("resolutionChips");
@@ -92,6 +86,8 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function renderLegend() {
+    if (!legendContainer) return;
+
     const items = [
       { label: "Cars", color: COLORS.cars },
       { label: "Motorcycles", color: COLORS.motorcycles },
@@ -111,6 +107,8 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function updateRangeSelect() {
+    if (!rangeSelect) return;
+
     const cfg = RESOLUTION_CONFIG[currentResolution];
     rangeSelect.innerHTML = cfg.ranges
       .map(
@@ -125,6 +123,8 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   async function loadChart() {
+    if (!ctx) return;
+
     const { labels, datasets } = await fetchTrafficData(
       currentResolution,
       currentRange
@@ -172,14 +172,9 @@ document.addEventListener("DOMContentLoaded", () => {
     const options = {
       responsive: true,
       maintainAspectRatio: false,
-      interaction: {
-        mode: "index",
-        intersect: false,
-      },
+      interaction: { mode: "index", intersect: false },
       plugins: {
-        legend: {
-          display: false,
-        },
+        legend: { display: false },
         tooltip: {
           backgroundColor: "rgba(17,24,39,0.92)",
           padding: 10,
@@ -196,23 +191,13 @@ document.addEventListener("DOMContentLoaded", () => {
       },
       scales: {
         x: {
-          grid: {
-            display: false,
-          },
-          ticks: {
-            color: "#6b7280",
-            maxRotation: 0,
-          },
+          grid: { display: false },
+          ticks: { color: "#6b7280", maxRotation: 0 },
         },
         y: {
           beginAtZero: true,
-          grid: {
-            color: "rgba(209,213,219,0.4)",
-            drawBorder: false,
-          },
-          ticks: {
-            color: "#9ca3af",
-          },
+          grid: { color: "rgba(209,213,219,0.4)", drawBorder: false },
+          ticks: { color: "#9ca3af" },
         },
       },
     };
@@ -230,7 +215,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  chipsContainer.addEventListener("click", (evt) => {
+  chipsContainer?.addEventListener("click", (evt) => {
     const chip = evt.target.closest(".chip");
     if (!chip) return;
     const res = chip.dataset.resolution;
@@ -246,7 +231,7 @@ document.addEventListener("DOMContentLoaded", () => {
     loadChart();
   });
 
-  rangeSelect.addEventListener("change", (evt) => {
+  rangeSelect?.addEventListener("change", (evt) => {
     currentRange = Number(evt.target.value) || currentRange;
     loadChart();
   });
@@ -255,17 +240,10 @@ document.addEventListener("DOMContentLoaded", () => {
   updateRangeSelect();
   loadChart();
 
-  /* ------------------------------------------------
-   * Live Activity Feed (Live + History filter)
-   * ------------------------------------------------*/
   const activityList = document.getElementById("activityList");
   const activityModeChips = document.getElementById("activityModeChips");
-  const activityHistoryFilters = document.getElementById(
-    "activityHistoryFilters"
-  );
-  const activityResolutionChips = document.getElementById(
-    "activityResolutionChips"
-  );
+  const activityHistoryFilters = document.getElementById("activityHistoryFilters");
+  const activityResolutionChips = document.getElementById("activityResolutionChips");
   const activityRangeSelect = document.getElementById("activityRangeSelect");
   const liveDot = document.getElementById("liveDot");
   const activityModeLabel = document.getElementById("activityModeLabel");
@@ -280,40 +258,36 @@ document.addEventListener("DOMContentLoaded", () => {
       status: "registered",
       timeLabel: "10:30 AM",
       vehicleType: "Sedan",
-      vehicleIcon: "fa-car-side",
       driver: "John Doe",
       source: "Registered plate",
       reason: "",
-      confidence: 95,
-      thumbnailUrl: "https://via.placeholder.com/80x50?text=ABC",
+      thumbnailUrl: "images/no-video.png",
     },
     {
       plate: "XYZ-789",
       status: "not-registered",
       timeLabel: "10:25 AM",
       vehicleType: "Pickup",
-      vehicleIcon: "fa-truck-pickup",
       driver: "",
       source: "",
       reason: "Plate not found in registry",
-      confidence: 87,
-      thumbnailUrl: "https://via.placeholder.com/80x50?text=XYZ",
+      thumbnailUrl: "images/no-video.png",
     },
     {
       plate: "DEF-456",
       status: "registered",
       timeLabel: "10:20 AM",
       vehicleType: "Motorcycle",
-      vehicleIcon: "fa-motorcycle",
       driver: "Jane Smith",
       source: "RFID sticker",
       reason: "",
-      confidence: 92,
-      thumbnailUrl: "https://via.placeholder.com/80x50?text=DEF",
+      thumbnailUrl: "images/no-video.png",
     },
   ];
 
   function renderActivity(events) {
+    if (!activityList) return;
+
     activityList.innerHTML = events
       .map((evt) => {
         const statusClass =
@@ -326,13 +300,11 @@ document.addEventListener("DOMContentLoaded", () => {
               ? `<strong>Driver:</strong> ${evt.driver} · <strong>Source:</strong> ${evt.source}`
               : `<strong>Source:</strong> ${evt.source || "Plate recognition"}`
             : `<strong>Reason:</strong> ${evt.reason || "Unknown"}`;
-        const thumb =
-          evt.thumbnailUrl || "https://via.placeholder.com/80x50?text=Frame";
 
         return `
           <div class="activity-item">
             <div class="activity-thumbnail">
-              <img src="${thumb}" alt="Captured frame for ${evt.plate}" />
+              <img src="${evt.thumbnailUrl}" alt="Captured frame for ${evt.plate}" />
             </div>
             <div class="activity-details">
               <div class="activity-main-row">
@@ -342,9 +314,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 <span><i class="far fa-clock"></i> ${evt.timeLabel}</span>
                 <span>${evt.vehicleType}</span>
               </div>
-              <div class="activity-meta">
-                ${metaLine}
-              </div>
+              <div class="activity-meta">${metaLine}</div>
             </div>
             <div class="activity-confidence-badge ${statusClass}">${statusLabel}</div>
           </div>
@@ -353,43 +323,30 @@ document.addEventListener("DOMContentLoaded", () => {
       .join("");
   }
 
-  // Fake async history source
   async function fetchActivityHistory(resolution, range) {
     await new Promise((resolve) => setTimeout(resolve, 250));
-
     const labels = RESOLUTION_CONFIG[resolution].labelFormatter(range);
-    const types = [
-      { type: "Sedan", icon: "fa-car-side" },
-      { type: "Pickup", icon: "fa-truck-pickup" },
-      { type: "Motorcycle", icon: "fa-motorcycle" },
-    ];
 
-    const events = labels.map((lbl, index) => {
+    return labels.map((lbl, index) => {
       const isRegistered = Math.random() > 0.25;
-      const t = types[index % types.length];
-
       return {
         plate: ["ABC-123", "XYZ-789", "DEF-456", "JHK-771"][index % 4],
         status: isRegistered ? "registered" : "not-registered",
         timeLabel: lbl,
-        vehicleType: t.type,
-        vehicleIcon: t.icon,
+        vehicleType: ["Sedan", "Pickup", "Motorcycle"][index % 3],
         driver: isRegistered
           ? ["John Doe", "Jane Smith", "Alex Cruz"][index % 3]
           : "",
         source: isRegistered ? "Plate recognition" : "",
         reason: !isRegistered ? "Plate not found in registry" : "",
-        confidence: Math.round(80 + Math.random() * 20),
-        thumbnailUrl: `https://via.placeholder.com/80x50?text=${
-          isRegistered ? "REG" : "UNREG"
-        }`,
+        thumbnailUrl: "images/no-video.png",
       };
     });
-
-    return events;
   }
 
   function updateActivityRangeSelect() {
+    if (!activityRangeSelect) return;
+
     const cfg = RESOLUTION_CONFIG[activityResolution];
     activityRangeSelect.innerHTML = cfg.ranges
       .map(
@@ -404,10 +361,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   async function loadHistoryActivity() {
-    const events = await fetchActivityHistory(
-      activityResolution,
-      activityRange
-    );
+    const events = await fetchActivityHistory(activityResolution, activityRange);
     renderActivity(events);
   }
 
@@ -415,20 +369,28 @@ document.addEventListener("DOMContentLoaded", () => {
     activityMode = newMode;
 
     if (activityMode === "live") {
-      liveDot.classList.add("on");
-      activityModeLabel.textContent = "Live · Last 20 events";
-      activityHistoryFilters.style.display = "none";
+      liveDot?.classList.add("on");
+      if (activityModeLabel) {
+        activityModeLabel.textContent = "Live · Last 20 events";
+      }
+      if (activityHistoryFilters) {
+        activityHistoryFilters.style.display = "none";
+      }
       renderActivity(STATIC_LIVE_EVENTS);
     } else {
-      liveDot.classList.remove("on");
+      liveDot?.classList.remove("on");
       const cfg = RESOLUTION_CONFIG[activityResolution];
-      activityModeLabel.textContent = `History · ${cfg.label} ${activityRange} ${cfg.unit}`;
-      activityHistoryFilters.style.display = "flex";
+      if (activityModeLabel) {
+        activityModeLabel.textContent = `History · ${cfg.label} ${activityRange} ${cfg.unit}`;
+      }
+      if (activityHistoryFilters) {
+        activityHistoryFilters.style.display = "flex";
+      }
       loadHistoryActivity();
     }
   }
 
-  activityModeChips.addEventListener("click", (evt) => {
+  activityModeChips?.addEventListener("click", (evt) => {
     const chip = evt.target.closest(".chip");
     if (!chip) return;
     const mode = chip.dataset.mode;
@@ -441,7 +403,7 @@ document.addEventListener("DOMContentLoaded", () => {
     setMode(mode);
   });
 
-  activityResolutionChips.addEventListener("click", (evt) => {
+  activityResolutionChips?.addEventListener("click", (evt) => {
     const chip = evt.target.closest(".chip");
     if (!chip) return;
     const res = chip.dataset.resolution;
@@ -452,26 +414,65 @@ document.addEventListener("DOMContentLoaded", () => {
       btn.classList.toggle("active", btn === chip);
     });
     updateActivityRangeSelect();
-    if (activityMode === "history") {
-      loadHistoryActivity();
-    }
+    if (activityMode === "history") loadHistoryActivity();
   });
 
-  activityRangeSelect.addEventListener("change", (evt) => {
+  activityRangeSelect?.addEventListener("change", (evt) => {
     activityRange = Number(evt.target.value) || activityRange;
-    if (activityMode === "history") {
-      loadHistoryActivity();
-    }
+    if (activityMode === "history") loadHistoryActivity();
   });
 
-  // Init activity feed
   updateActivityRangeSelect();
   setMode("live");
 
-  const pusher = new Pusher("437af9281329a965a6f7", { cluster: "ap1" });
+  let pusher = null;
+  let channel = null;
+  let videoChannel = null;
 
-  const channel = pusher.subscribe("gate-channel");
-  const videoChannel = pusher.subscribe("video-channel");
+  try {
+    const cfg = await window.getPusherConfig?.();
+    console.log("[Pusher] config from server:", cfg);
+
+    if (cfg?.key && typeof Pusher !== "undefined") {
+      const { key, ...options } = cfg;
+      pusher = new Pusher(key, options);
+
+      pusher.connection.bind("connected", () => {
+        console.log("[Pusher] connected");
+      });
+
+      pusher.connection.bind("state_change", (states) => {
+        console.log("[Pusher] state change:", states);
+      });
+
+      pusher.connection.bind("error", (err) => {
+        console.warn("[Pusher] connection error:", err);
+      });
+
+      channel = pusher.subscribe("gate-channel");
+      videoChannel = pusher.subscribe("video-channel");
+
+      channel.bind("pusher:subscription_succeeded", () => {
+        console.log("[Pusher] subscribed: gate-channel");
+      });
+
+      channel.bind("pusher:subscription_error", (status) => {
+        console.warn("[Pusher] subscription error: gate-channel", status);
+      });
+
+      videoChannel.bind("pusher:subscription_succeeded", () => {
+        console.log("[Pusher] subscribed: video-channel");
+      });
+
+      videoChannel.bind("pusher:subscription_error", (status) => {
+        console.warn("[Pusher] subscription error: video-channel", status);
+      });
+    } else {
+      console.warn("[Pusher] config missing or Pusher lib unavailable");
+    }
+  } catch (err) {
+    console.warn("[Pusher] disabled/fallback mode:", err);
+  }
 
   const band = document.querySelector(".gate-status-band");
   const label = document.querySelector(".gate-status-label");
@@ -479,41 +480,35 @@ document.addEventListener("DOMContentLoaded", () => {
   const gateVehicleImg = document.querySelector(".gate-vehicle-img");
 
   const GATE_DETECT_TIMEOUT_MS = 15000;
-
-  // keep track of the current reset timer
   let gateResetTimer = null;
 
   const reset = () => {
-    band.classList.remove("registered", "not-registered");
-    label.textContent = "NO VEHICLE";
-    gateVehicleImg.src = "";
-
+    console.log("[GateUI] reset()");
+    if (band) band.classList.remove("registered", "not-registered");
+    if (label) label.textContent = "NO VEHICLE";
+    if (gateVehicleImg) gateVehicleImg.src = "";
     document
       .querySelectorAll(".gate-info-item-value")
       .forEach((el) => (el.textContent = "---"));
   };
 
-  // helper to schedule a reset safely (no stacking timeouts)
   const scheduleGateReset = () => {
-    if (gateResetTimer) {
-      clearTimeout(gateResetTimer);
-    }
+    if (gateResetTimer) clearTimeout(gateResetTimer);
     gateResetTimer = setTimeout(() => {
       reset();
-      gateResetTimer = null; // free reference
+      gateResetTimer = null;
     }, GATE_DETECT_TIMEOUT_MS);
   };
 
   reset();
 
-  channel.bind("gate-update", (data) => {
-    console.log("gate-update ", data);
+  const handleGateUpdate = (data) => {
+    console.log("[Pusher] gate-update event received", data);
 
-    // No vehicle on sensor – clear any pending reset and reset immediately
-    if (!data.vehicleFound) {
-      gateVehicleImg.src = "";
-      band.classList.remove("registered", "not-registered");
-      label.textContent = "NO VEHICLE";
+    if (!data?.vehicleFound) {
+      if (gateVehicleImg) gateVehicleImg.src = "";
+      if (band) band.classList.remove("registered", "not-registered");
+      if (label) label.textContent = "NO VEHICLE";
       if (gateResetTimer) {
         clearTimeout(gateResetTimer);
         gateResetTimer = null;
@@ -521,113 +516,336 @@ document.addEventListener("DOMContentLoaded", () => {
       reset();
       return;
     }
-    gateVehicleImg.src = "images/car.png";
 
-    // Vehicle present but no plate detected (unregistered / unknown)
+    if (gateVehicleImg) gateVehicleImg.src = "images/car.png";
+
     if (!data?.driver || !data?.vehicle) {
-      band.classList.remove("registered");
-      band.classList.add("not-registered");
-      label.textContent = "NOT REGISTERED";
+      if (band) {
+        band.classList.remove("registered");
+        band.classList.add("not-registered");
+      }
+      if (label) label.textContent = "NOT REGISTERED";
+
+      if (plateField && plateField.length > 0) {
+        plateField[0].textContent = data?.plate || "---";
+        plateField[1].textContent = "---";
+        plateField[2].textContent = "---";
+        plateField[3].textContent = "---";
+        plateField[4].textContent = "---";
+      }
+
       scheduleGateReset();
       return;
-    } else if (!data.plate) {
-      band.classList.remove("registered", "not-registered");
-      label.textContent = "NO VEHICLE";
+    } else if (!data?.plate) {
+      if (band) band.classList.remove("registered", "not-registered");
+      if (label) label.textContent = "NO VEHICLE";
       reset();
       return;
     }
-    band.classList.remove("not-registered");
-    band.classList.add("registered");
-    label.textContent = "REGISTERED";
 
-    // Plate found
+    if (band) {
+      band.classList.remove("not-registered");
+      band.classList.add("registered");
+    }
+    if (label) label.textContent = "REGISTERED";
+
     if (plateField && plateField.length > 0) {
-      plateField[0].textContent = data?.vehicle?.plate;
-      plateField[1].textContent = data?.driver?.fullName;
-      plateField[2].textContent = data?.vehicle?.type;
-      plateField[3].textContent = data?.vehicle?.brand;
-      plateField[4].textContent = data?.vehicle?.model;
-
-      setTimeout(() => {
-        const type = data?.type?.toLowerCase() || "";
-        if (type.includes("motorcycle")) {
-          gateVehicleImg.src = "images/motorcycle.png";
-        } else if (type.includes("truck")) {
-          gateVehicleImg.src = "images/truck.png";
-        } else if (type.includes("bus")) {
-          gateVehicleImg.src = "images/bus.png";
-        } else if (type.includes("utility vehicle")) {
-          gateVehicleImg.src = "images/van.png";
-        } else if (type.includes("pickup")) {
-          gateVehicleImg.src = "images/pickup.png";
-        } else {
-          gateVehicleImg.src = "images/car.png";
-        }
-      }, 100);
+      plateField[0].textContent = data?.plate || "---";
+      plateField[1].textContent = data?.driver?.fullName || "---";
+      plateField[2].textContent = data?.vehicle?.type || "---";
+      plateField[3].textContent = data?.vehicle?.brand || "---";
+      plateField[4].textContent = data?.vehicle?.model || "---";
     }
 
-
-    // schedule a single reset for this detection
     scheduleGateReset();
+  };
+
+  const AI_URL = String(window.getAIURL?.() || "").replace(/\/+$/, "");
+  const STREAMS_ENDPOINT = `${AI_URL}/streams`;
+  const SLOT_ASSIGNMENTS_KEY = "dashboard_camera_slot_assignments_v1";
+  const CAMERA_TIMEOUT_MS = 4000;
+  const STREAMS_REFRESH_MS = 3000;
+  const FRAME_POLL_MS = 1000;
+
+  const cameraCards = Array.from(
+    document.querySelectorAll(".camera-previews .camera-card")
+  );
+
+  const slots = cameraCards.map((card, index) => {
+    const img = card.querySelector("[data-camera-image]");
+    const labelChip = card.querySelector(".camera-label-chip");
+    const cameraName = card.querySelector(".camera-name");
+    const statusPill = card.querySelector("[data-camera-status]");
+    const selectEl = card.querySelector("[data-camera-select]");
+    const refreshBtn = card.querySelector("[data-camera-refresh]");
+    const assignedText = card.querySelector("[data-camera-assigned]");
+
+    return {
+      key: `slot_${index + 1}`,
+      card,
+      img,
+      labelChip,
+      cameraName,
+      statusPill,
+      assignedText,
+      selectEl,
+      refreshBtn,
+      assignedStreamId: null,
+      lastFrameTs: null,
+      lastImageUrl: "",
+    };
   });
 
-  // ----------------------------------------------------
-  // CAMERA STREAM + ONLINE/OFFLINE DETECTION
-  // ----------------------------------------------------
+  let availableStreams = [];
 
-  // Choose the <img> element that will show the stream
-  const liveImg = document.querySelector(
-    ".camera-previews .camera-card:first-child .camera-thumb img"
-  );
-
-  // Status pill for that same camera
-  const cameraStatusPill = document.querySelector(
-    ".camera-previews .camera-card:first-child .camera-status-pill"
-  );
-
-  // How long (ms) without frames before we consider the camera offline
-  const CAMERA_TIMEOUT_MS = 2000;
-
-  let lastFrameTs = null;
-
-  function updateCameraStatus(isOnline) {
-    if (!cameraStatusPill) return;
-
-    cameraStatusPill.classList.toggle("online", isOnline);
-    cameraStatusPill.classList.toggle("offline", !isOnline);
-    cameraStatusPill.innerHTML = `<i class="fas fa-circle"></i> ${
-      isOnline ? "Online" : "Offline"
-    }`;
-    if (!isOnline && !liveImg.src.includes("no-video.png")) {
-      // only reset preview when actually offline
-      liveImg.src = "images/no-video.png";
+  function readAssignments() {
+    try {
+      const raw = localStorage.getItem(SLOT_ASSIGNMENTS_KEY);
+      if (!raw) return {};
+      const parsed = JSON.parse(raw);
+      return parsed && typeof parsed === "object" ? parsed : {};
+    } catch {
+      return {};
     }
   }
 
-  // Start as offline until the first frame arrives
-  updateCameraStatus(false);
+  function saveAssignments() {
+    const payload = {};
+    slots.forEach((slot) => {
+      payload[slot.key] = slot.assignedStreamId || "";
+    });
+    localStorage.setItem(SLOT_ASSIGNMENTS_KEY, JSON.stringify(payload));
+  }
 
-  // Heartbeat: called whenever we get a new frame
-  videoChannel.bind("frame", (data) => {
-    const streamId = data.stream_id || "mobile-1";
-    const ts = data.ts || Date.now();
+  function applySavedAssignments() {
+    const saved = readAssignments();
+    slots.forEach((slot) => {
+      const streamId = String(saved?.[slot.key] || "").trim();
+      slot.assignedStreamId = streamId || null;
+    });
+  }
 
-    lastFrameTs = Date.now();
-    updateCameraStatus(true);
+  function updateSlotStatus(slot, isOnline) {
+    if (!slot?.statusPill) return;
 
-    // This will fetch the latest JPEG; `ts` is just cache-busting
-    liveImg.src = `${window.getAIURL()}/latest-frame?stream_id=${encodeURIComponent(
-      streamId
-    )}&ts=${ts}`;
-  });
+    slot.statusPill.classList.toggle("online", !!isOnline);
+    slot.statusPill.classList.toggle("offline", !isOnline);
+    slot.statusPill.innerHTML = `<i class="fas fa-circle"></i> ${
+      isOnline ? "Online" : "Offline"
+    }`;
 
-  // Periodically check if we've stopped receiving frames
-  setInterval(() => {
-    if (lastFrameTs === null) return; // never got a frame yet
-
-    const diff = Date.now() - lastFrameTs;
-    if (diff > CAMERA_TIMEOUT_MS) {
-      updateCameraStatus(false);
+    if (!isOnline && slot?.img && !slot.img.src.includes("no-video.png")) {
+      slot.img.src = "images/no-video.png";
     }
-  }, 1000);
+  }
+
+  function bindSlotActions(slot) {
+    if (slot.selectEl && !slot.selectEl.dataset.bound) {
+      slot.selectEl.addEventListener("change", (evt) => {
+        const value = String(evt.target.value || "").trim();
+        slot.assignedStreamId = value || null;
+        slot.lastFrameTs = null;
+        slot.lastImageUrl = "";
+        saveAssignments();
+        renderSlots();
+      });
+      slot.selectEl.dataset.bound = "true";
+    }
+
+    if (slot.refreshBtn && !slot.refreshBtn.dataset.bound) {
+      slot.refreshBtn.addEventListener("click", async () => {
+        await fetchStreams();
+      });
+      slot.refreshBtn.dataset.bound = "true";
+    }
+  }
+
+  function autoAssignEmptySlots() {
+    const assigned = new Set(
+      slots.map((slot) => slot.assignedStreamId).filter(Boolean)
+    );
+
+    const freeStreams = availableStreams
+      .map((x) => x.stream_id)
+      .filter((id) => id && !assigned.has(id));
+
+    slots.forEach((slot) => {
+      if (slot.assignedStreamId) return;
+      const next = freeStreams.shift();
+      if (next) slot.assignedStreamId = next;
+    });
+  }
+
+  function renderSlots() {
+    slots.forEach((slot, index) => {
+      bindSlotActions(slot);
+
+      const selected = slot.assignedStreamId || "";
+      const onlineInfo = availableStreams.find(
+        (s) => s.stream_id === slot.assignedStreamId
+      );
+
+      const options = [
+        `<option value="">Not paired</option>`,
+        ...availableStreams.map(
+          (stream) => `
+            <option value="${stream.stream_id}" ${
+            stream.stream_id === selected ? "selected" : ""
+          }>
+              ${stream.stream_id}
+            </option>
+          `
+        ),
+      ].join("");
+
+      if (slot.selectEl) {
+        slot.selectEl.innerHTML = options;
+        slot.selectEl.value = selected;
+      }
+
+      const title = selected || `Camera Slot ${index + 1}`;
+      if (slot.labelChip) slot.labelChip.textContent = title;
+      if (slot.cameraName) slot.cameraName.textContent = title;
+      if (slot.assignedText) {
+        slot.assignedText.textContent = selected || "Not paired";
+      }
+
+      if (!selected) {
+        updateSlotStatus(slot, false);
+        if (slot.img) slot.img.src = "images/no-video.png";
+        return;
+      }
+
+      const isOnline =
+        !!onlineInfo &&
+        (onlineInfo.is_online === true ||
+          (typeof slot.lastFrameTs === "number" &&
+            Date.now() - slot.lastFrameTs <= CAMERA_TIMEOUT_MS));
+
+      updateSlotStatus(slot, isOnline);
+    });
+  }
+
+  async function fetchStreams() {
+    try {
+      const resp = await fetch(STREAMS_ENDPOINT, {
+        method: "GET",
+        cache: "no-store",
+      });
+
+      if (!resp.ok) {
+        throw new Error(`Failed to load streams (${resp.status})`);
+      }
+
+      const result = await resp.json();
+      availableStreams = Array.isArray(result?.streams) ? result.streams : [];
+
+      autoAssignEmptySlots();
+      saveAssignments();
+      renderSlots();
+    } catch (err) {
+      console.error("[streams] fetch error:", err);
+      availableStreams = [];
+      renderSlots();
+    }
+  }
+
+  function updateSlotFrame(streamId, ts) {
+    const matchedSlots = slots.filter(
+      (slot) => slot.assignedStreamId && slot.assignedStreamId === streamId
+    );
+
+    matchedSlots.forEach((slot) => {
+      slot.lastFrameTs = Date.now();
+      updateSlotStatus(slot, true);
+
+      if (slot.img) {
+        const nextSrc = `${AI_URL}/latest-frame?stream_id=${encodeURIComponent(
+          streamId
+        )}&ts=${ts || Date.now()}`;
+
+        slot.lastImageUrl = nextSrc;
+        slot.img.src = nextSrc;
+      }
+    });
+  }
+
+  async function pollAssignedFrames() {
+    for (const slot of slots) {
+      const streamId = slot.assignedStreamId;
+      if (!streamId) continue;
+
+      const streamInfo = availableStreams.find((s) => s.stream_id === streamId);
+      if (!streamInfo?.is_online) {
+        updateSlotStatus(slot, false);
+        continue;
+      }
+
+      const nextSrc = `${AI_URL}/latest-frame?stream_id=${encodeURIComponent(
+        streamId
+      )}&ts=${Date.now()}`;
+
+      if (slot.img) {
+        slot.img.src = nextSrc;
+        slot.lastImageUrl = nextSrc;
+        slot.lastFrameTs = Date.now();
+        updateSlotStatus(slot, true);
+      }
+    }
+  }
+
+  function monitorCameraTimeouts() {
+    slots.forEach((slot) => {
+      if (!slot.assignedStreamId) {
+        updateSlotStatus(slot, false);
+        return;
+      }
+
+      if (slot.lastFrameTs === null) {
+        const info = availableStreams.find(
+          (s) => s.stream_id === slot.assignedStreamId
+        );
+        updateSlotStatus(slot, !!info?.is_online);
+        return;
+      }
+
+      const diff = Date.now() - slot.lastFrameTs;
+      if (diff > CAMERA_TIMEOUT_MS) {
+        updateSlotStatus(slot, false);
+      }
+    });
+  }
+
+  applySavedAssignments();
+  renderSlots();
+  fetchStreams();
+
+  setInterval(fetchStreams, STREAMS_REFRESH_MS);
+  setInterval(monitorCameraTimeouts, 1000);
+  setInterval(pollAssignedFrames, FRAME_POLL_MS);
+
+  if (channel) {
+    console.log("[Pusher] binding gate-update handler");
+    channel.bind("gate-update", (data) => {
+      console.log("[Pusher] gate-update event received", data);
+      handleGateUpdate(data);
+    });
+  } else {
+    console.warn("[Pusher] gate channel is not available");
+  }
+
+  if (videoChannel) {
+    console.log("[Pusher] binding video frame handler");
+    videoChannel.bind("frame", (data) => {
+      console.log("[video-channel/frame]", data);
+
+      const streamId = String(data?.stream_id || "").trim();
+      if (!streamId) return;
+
+      const ts = data?.ts || Date.now();
+      updateSlotFrame(streamId, ts);
+    });
+  } else {
+    console.warn("[Pusher] video channel is not available");
+  }
 });

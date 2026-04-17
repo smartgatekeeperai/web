@@ -1,16 +1,14 @@
-//controller.js
+// controller.js
 import camelcaseKeys from "camelcase-keys";
 import NodeCache from "node-cache";
 import bcrypt from "bcryptjs";
 
 // Simple in-memory cache for CRUD
-// stdTTL = 60s, tweak as you like
 const crudCache = new NodeCache({
   stdTTL: 60,
   checkperiod: 120,
 });
 
-// Cache keys
 const CACHE_KEYS = {
   vehicleBrands: "vehicleBrands",
   identificationTypes: "identificationTypes",
@@ -20,36 +18,27 @@ const CACHE_KEYS = {
   vehicles: "vehicles",
 };
 
-// Helper: invalidate all cache entries that share a prefix
 function invalidateCachePrefix(prefix) {
   const keys = crudCache.keys();
   const toDelete = keys.filter(
-    (k) => k === prefix || k.startsWith(prefix + ":")
+    (k) => k === prefix || k.startsWith(prefix + ":"),
   );
   if (toDelete.length > 0) {
     crudCache.del(toDelete);
   }
 }
 
-// ----------------------------------------------------
-// Factory to create controllers with access to pool
-// ----------------------------------------------------
 export function createControllers({ pool }) {
-  // ----------------------------------------------------
-  // CRUD / DB HELPERS
-  // ----------------------------------------------------
   async function dbQuery(sql, params = []) {
     const { rows } = await pool.query(sql, params);
     return rows;
   }
 
-  // Same as dbQuery but uses a specific client (for transactions)
   async function dbTxQuery(client, sql, params = []) {
     const { rows } = await client.query(sql, params);
     return rows;
   }
 
-  // Generic transaction wrapper: handles BEGIN / COMMIT / ROLLBACK
   async function withTransaction(workFn) {
     const client = await pool.connect();
     try {
@@ -60,9 +49,7 @@ export function createControllers({ pool }) {
     } catch (err) {
       try {
         await client.query("ROLLBACK");
-      } catch (_) {
-        // ignore rollback errors
-      }
+      } catch (_) {}
       throw err;
     } finally {
       client.release();
@@ -70,7 +57,9 @@ export function createControllers({ pool }) {
   }
 
   async function hashPassword(plain) {
-    const bcryptRounds = !isNaN(Number(process.env.BCRYPT_SALT_ROUNDS)) ? Number(process.env.BCRYPT_SALT_ROUNDS) : 10;
+    const bcryptRounds = !isNaN(Number(process.env.BCRYPT_SALT_ROUNDS))
+      ? Number(process.env.BCRYPT_SALT_ROUNDS)
+      : 10;
     const salt = await bcrypt.genSalt(bcryptRounds);
     return bcrypt.hash(plain, salt);
   }
@@ -79,8 +68,7 @@ export function createControllers({ pool }) {
     return bcrypt.compare(plain, storedHash);
   }
 
-
-    // ------------ Public Safe Config ------------
+  // ------------ Public Safe Config ------------
   async function getPublicConfig(req, res) {
     try {
       const rawNames = req.query.names;
@@ -102,35 +90,40 @@ export function createControllers({ pool }) {
           const vercel = process.env.VERCEL === "1";
 
           const pusherKey = String(process.env.PUSHER_KEY || "").trim();
-          const pusherCluster = String(process.env.PUSHER_CLUSTER || "ap1").trim();
           const pusherHost = String(process.env.PUSHER_HOST || "").trim();
           const pusherPort = Number(process.env.PUSHER_PORT || 6001);
           const useLocalRequested =
-            String(process.env.USE_LOCAL_PUSHER || "false").toLowerCase() === "true";
+            String(process.env.USE_LOCAL_PUSHER || "false").toLowerCase() ===
+            "true";
 
           const isProduction = nodeEnv === "production" || vercel;
           const useLocal = useLocalRequested && !isProduction;
 
           if (useLocal) {
-            return {
+            const payload = {
               mode: "local",
               key: pusherKey,
-              cluster: pusherCluster,
+              cluster: String(process.env.PUSHER_CLUSTER || "ap1").trim(),
               wsHost: pusherHost || req.hostname,
               wsPort: pusherPort,
-              wssPort: pusherPort,
               forceTLS: false,
-              enabledTransports: ["ws", "wss"],
+              enabledTransports: ["ws"],
               disableStats: true,
             };
+
+            console.log("[public-config] local pusher config =", payload);
+            return payload;
           }
 
-          return {
+          const payload = {
             mode: "cloud",
             key: pusherKey,
-            cluster: pusherCluster,
+            cluster: String(process.env.PUSHER_CLUSTER || "ap1").trim(),
             forceTLS: true,
           };
+
+          console.log("[public-config] cloud pusher config =", payload);
+          return payload;
         },
       };
 
@@ -154,13 +147,14 @@ export function createControllers({ pool }) {
     }
   }
 
-  // ------------ Vehicle Brand and Model (no cache) ------------
+  // ------------ Vehicle Brand and Model ------------
   async function getVehicleBrands(req, res) {
     try {
       const cached = crudCache.get(CACHE_KEYS.vehicleBrands);
       if (cached) {
         return res.json({ success: true, data: cached });
       }
+
       const resp = await fetch(
         "https://apisearch.topgear.com.ph/topgear/v1/buyers-guide/makes/",
         {
@@ -169,18 +163,18 @@ export function createControllers({ pool }) {
             "Content-Type": "application/json",
             Origin: "https://www.topgear.com.ph",
           },
-        }
+        },
       );
 
       if (!resp.ok) {
-        throw new Error(`Failed to load vehicle brands`);
+        throw new Error("Failed to load vehicle brands");
       }
+
       const data = await resp.json();
-      crudCache.set(
-        CACHE_KEYS.vehicleBrands,
-        data?.map((x) => x.name)
-      );
-      return res.json({ success: true, data: data?.map((x) => x.name) });
+      const brands = data?.map((x) => x.name) || [];
+      crudCache.set(CACHE_KEYS.vehicleBrands, brands);
+
+      return res.json({ success: true, data: brands });
     } catch (err) {
       console.error(err);
       return res.status(500).json({
@@ -190,7 +184,6 @@ export function createControllers({ pool }) {
     }
   }
 
-  // ------------ IdentificationType ------------
   async function getIdentificationTypes(req, res) {
     try {
       const cached = crudCache.get(CACHE_KEYS.identificationTypes);
@@ -199,10 +192,11 @@ export function createControllers({ pool }) {
       }
 
       const rows = await dbQuery(
-        `SELECT * FROM dbo."IdentificationType" WHERE "Active" = true ORDER BY GREATEST("CreatedAt", "UpdatedAt") DESC`
+        `SELECT * FROM dbo."IdentificationType" WHERE "Active" = true ORDER BY GREATEST("CreatedAt", "UpdatedAt") DESC`,
       );
       const data = camelcaseKeys(rows);
       crudCache.set(CACHE_KEYS.identificationTypes, data);
+
       return res.json({ success: true, data });
     } catch (err) {
       console.error(err);
@@ -220,7 +214,7 @@ export function createControllers({ pool }) {
       if (id) {
         rows = await dbQuery(
           `SELECT * FROM dbo."IdentificationType" WHERE "Active" = true AND "Id" = $1`,
-          [id]
+          [id],
         );
 
         if (!rows.length) {
@@ -228,19 +222,19 @@ export function createControllers({ pool }) {
             .status(500)
             .json({ success: false, message: "Identification Type not found" });
         }
+
         rows = await dbQuery(
           `UPDATE dbo."IdentificationType" SET "Name" = $1, "UpdatedAt" = NOW() WHERE "Id" = $2 RETURNING *`,
-          [name, id]
+          [name, id],
         );
       } else {
         rows = await dbQuery(
           `INSERT INTO dbo."IdentificationType" ("Name") VALUES ($1) RETURNING *`,
-          [name]
+          [name],
         );
       }
 
       invalidateCachePrefix(CACHE_KEYS.identificationTypes);
-
       return res.json({ success: true, data: camelcaseKeys(rows[0]) });
     } catch (err) {
       console.error(err);
@@ -249,12 +243,11 @@ export function createControllers({ pool }) {
           success: false,
           message: "IdentificationType already exists",
         });
-      } else {
-        return res.status(500).json({
-          success: false,
-          message: "Failed to upsert IdentificationType",
-        });
       }
+      return res.status(500).json({
+        success: false,
+        message: "Failed to upsert IdentificationType",
+      });
     }
   }
 
@@ -262,15 +255,15 @@ export function createControllers({ pool }) {
     const { id } = req.params;
     try {
       const rows = await dbQuery(
-        `UPDATE dbo."IdentificationType" SET "Active" = false, "UpdatedAt" = NOW() WHERE "Id" = $1 RETURNING * `,
-        [id]
+        `UPDATE dbo."IdentificationType" SET "Active" = false, "UpdatedAt" = NOW() WHERE "Id" = $1 RETURNING *`,
+        [id],
       );
+
       if (!camelcaseKeys(rows[0])) {
         return res.status(404).json({ success: false, message: "Not found" });
       }
 
       invalidateCachePrefix(CACHE_KEYS.identificationTypes);
-
       return res.json({ success: true });
     } catch (err) {
       console.error(err);
@@ -281,7 +274,6 @@ export function createControllers({ pool }) {
     }
   }
 
-  // ------------ RoleType ------------
   async function getRoleTypes(req, res) {
     try {
       const cached = crudCache.get(CACHE_KEYS.roleTypes);
@@ -290,7 +282,7 @@ export function createControllers({ pool }) {
       }
 
       const rows = await dbQuery(
-        `SELECT * FROM dbo."RoleType" WHERE "Active" = true ORDER BY GREATEST("CreatedAt", "UpdatedAt") DESC`
+        `SELECT * FROM dbo."RoleType" WHERE "Active" = true ORDER BY GREATEST("CreatedAt", "UpdatedAt") DESC`,
       );
       const data = camelcaseKeys(rows);
       crudCache.set(CACHE_KEYS.roleTypes, data);
@@ -312,17 +304,16 @@ export function createControllers({ pool }) {
       if (id) {
         rows = await dbQuery(
           `UPDATE dbo."RoleType" SET "Name" = $1, "UpdatedAt" = NOW() WHERE "Id" = $2 RETURNING *`,
-          [name, id]
+          [name, id],
         );
       } else {
         rows = await dbQuery(
           `INSERT INTO dbo."RoleType" ("Name") VALUES ($1) RETURNING *`,
-          [name]
+          [name],
         );
       }
 
       invalidateCachePrefix(CACHE_KEYS.roleTypes);
-
       return res.json({ success: true, data: camelcaseKeys(rows[0]) });
     } catch (err) {
       console.error(err);
@@ -330,12 +321,11 @@ export function createControllers({ pool }) {
         return res
           .status(400)
           .json({ success: false, message: "RoleType already exists" });
-      } else {
-        return res.status(500).json({
-          success: false,
-          message: "Failed to upsert RoleType",
-        });
       }
+      return res.status(500).json({
+        success: false,
+        message: "Failed to upsert RoleType",
+      });
     }
   }
 
@@ -344,14 +334,14 @@ export function createControllers({ pool }) {
     try {
       const rows = await dbQuery(
         `UPDATE dbo."RoleType" SET "Active" = false, "UpdatedAt" = NOW() WHERE "Id" = $1 RETURNING *`,
-        [id]
+        [id],
       );
+
       if (!camelcaseKeys(rows[0])) {
         return res.status(404).json({ success: false, message: "Not found" });
       }
 
       invalidateCachePrefix(CACHE_KEYS.roleTypes);
-
       return res.json({ success: true });
     } catch (err) {
       console.error(err);
@@ -362,12 +352,9 @@ export function createControllers({ pool }) {
     }
   }
 
-  // ------------ Drivers ------------
   async function getDrivers(req, res) {
     try {
-      // Read limit/offset from query
       let { limit, offset } = req.query;
-
       limit = parseInt(limit, 10);
       offset = parseInt(offset, 10);
 
@@ -381,26 +368,25 @@ export function createControllers({ pool }) {
         });
       }
 
-      // Query only the current page + total count
       const [rows, totalRows] = await Promise.all([
         dbQuery(
-          `SELECT * FROM dbo."Drivers" 
-               WHERE "Active" = true 
-               ORDER BY GREATEST("CreatedAt", "UpdatedAt") DESC
-               LIMIT $1 OFFSET $2`,
-          [limit, offset]
+          `SELECT * FROM dbo."Drivers"
+           WHERE "Active" = true
+           ORDER BY GREATEST("CreatedAt", "UpdatedAt") DESC
+           LIMIT $1 OFFSET $2`,
+          [limit, offset],
         ),
-        dbQuery(`SELECT COUNT(*) AS "total" 
-               FROM dbo."Vehicles" 
-               WHERE "Active" = true`),
+        dbQuery(
+          `SELECT COUNT(*) AS "total"
+           FROM dbo."Vehicles"
+           WHERE "Active" = true`,
+        ),
       ]);
 
       const data = camelcaseKeys(rows);
       const total = Number(totalRows?.[0]?.total ?? 0);
 
       const payload = { data, total };
-
-      // Cache this page
       crudCache.set(cacheKey, payload);
 
       return res.json({
@@ -435,11 +421,7 @@ export function createControllers({ pool }) {
     try {
       let rows;
 
-      // Basic validation (no transaction needed)
-      if (
-        !gender ||
-        !["male", "female"].some((x) => x === gender.toLowerCase())
-      ) {
+      if (!gender || !["male", "female"].includes(gender.toLowerCase())) {
         return res.status(500).json({
           success: false,
           message: `Invalid gender value '${gender}'`,
@@ -449,7 +431,7 @@ export function createControllers({ pool }) {
       if (roleType) {
         rows = await dbQuery(
           `SELECT * FROM dbo."RoleType" WHERE "Active" = true AND LOWER("Name") = LOWER($1)`,
-          [roleType]
+          [roleType],
         );
         if (!rows.length) {
           return res.status(500).json({
@@ -462,9 +444,8 @@ export function createControllers({ pool }) {
       if (identificationType) {
         rows = await dbQuery(
           `SELECT * FROM dbo."IdentificationType" WHERE "Active" = true AND LOWER("Name") = LOWER($1)`,
-          [identificationType]
+          [identificationType],
         );
-
         if (!rows.length) {
           return res.status(500).json({
             success: false,
@@ -473,11 +454,10 @@ export function createControllers({ pool }) {
         }
       }
 
-      // UPDATE existing driver: single UPDATE, transaction optional
       if (id) {
         rows = await dbQuery(
           `SELECT * FROM dbo."Drivers" WHERE "Active" = true AND "Id" = $1`,
-          [id]
+          [id],
         );
 
         if (!rows.length) {
@@ -485,11 +465,12 @@ export function createControllers({ pool }) {
             .status(500)
             .json({ success: false, message: "Driver not found" });
         }
+
         rows = await dbQuery(
-          `UPDATE dbo."Drivers" 
-           SET "FullName" = $1, "Gender" = $2, "ContactNumber" = $3, 
+          `UPDATE dbo."Drivers"
+           SET "FullName" = $1, "Gender" = $2, "ContactNumber" = $3,
                "RoleType" = $4, "IdentificationType" = $5, "IdentificationNumber" = $6, "UpdatedAt" = NOW()
-           WHERE "Id" = $7 
+           WHERE "Id" = $7
            RETURNING *`,
           [
             fullName,
@@ -499,21 +480,19 @@ export function createControllers({ pool }) {
             identificationType,
             identificationNumber,
             id,
-          ]
+          ],
         );
 
         invalidateCachePrefix(CACHE_KEYS.drivers);
         return res.json({ success: true, data: camelcaseKeys(rows[0]) });
       }
 
-      // CREATE new driver + vehicle + update Vehicles[] in a transaction
       const result = await withTransaction(async (client) => {
-        // 1) Insert driver
         const driverRows = await dbTxQuery(
           client,
-          `INSERT INTO dbo."Drivers" 
-           ("FullName", "Gender", "ContactNumber", "RoleType", "IdentificationType", "IdentificationNumber") 
-           VALUES ($1, $2, $3, $4, $5, $6) 
+          `INSERT INTO dbo."Drivers"
+           ("FullName", "Gender", "ContactNumber", "RoleType", "IdentificationType", "IdentificationNumber")
+           VALUES ($1, $2, $3, $4, $5, $6)
            RETURNING *`,
           [
             fullName,
@@ -522,43 +501,39 @@ export function createControllers({ pool }) {
             roleType,
             identificationType,
             identificationNumber,
-          ]
+          ],
         );
 
         const driver = camelcaseKeys(driverRows[0]);
 
         if (!(plateNumber && type && model && brand)) {
-          // Throw to rollback the new driver insert
-          throw new Error(`Vehicle information is required`);
+          throw new Error("Vehicle information is required");
         }
 
-        // 2) Insert vehicle
         const vehicleRes = await dbTxQuery(
           client,
-          `INSERT INTO dbo."Vehicles" 
-           ("PlateNumber", "Driver", "Type", "Model", "Brand") 
-           VALUES ($1, $2, $3, $4, $5) 
+          `INSERT INTO dbo."Vehicles"
+           ("PlateNumber", "Driver", "Type", "Model", "Brand")
+           VALUES ($1, $2, $3, $4, $5)
            RETURNING *`,
-          [plateNumber, JSON.stringify(driver), type, model, brand]
+          [plateNumber, JSON.stringify(driver), type, model, brand],
         );
 
         const vehicle = camelcaseKeys(vehicleRes[0]);
         const vehicles = [{ id: vehicle?.id, plateNumber, type, model, brand }];
 
-        // 3) Update driver's Vehicles array
         const updatedDriverRows = await dbTxQuery(
           client,
-          `UPDATE dbo."Drivers" 
+          `UPDATE dbo."Drivers"
            SET "Vehicles" = $1, "UpdatedAt" = NOW()
-           WHERE "Id" = $2 
+           WHERE "Id" = $2
            RETURNING *`,
-          [JSON.stringify(vehicles), driver.id]
+          [JSON.stringify(vehicles), driver.id],
         );
 
         return camelcaseKeys(updatedDriverRows[0]);
       });
 
-      // Invalidate caches on successful transaction
       invalidateCachePrefix(CACHE_KEYS.drivers);
       invalidateCachePrefix(CACHE_KEYS.vehicles);
 
@@ -587,12 +562,12 @@ export function createControllers({ pool }) {
           success: false,
           message: err?.message,
         });
-      } else {
-        return res.status(500).json({
-          success: false,
-          message: "Failed to upsert Driver",
-        });
       }
+
+      return res.status(500).json({
+        success: false,
+        message: "Failed to upsert Driver",
+      });
     }
   }
 
@@ -601,16 +576,18 @@ export function createControllers({ pool }) {
     try {
       let driverRes = await dbQuery(
         `SELECT * FROM dbo."Drivers" WHERE "Active" = true AND "Id" = $1`,
-        [id]
+        [id],
       );
+
       if (!driverRes.length) {
         return res
           .status(400)
           .json({ success: false, message: "Driver not found" });
       }
+
       const driver = camelcaseKeys(driverRes[0]);
 
-      const result = await withTransaction(async (client) => {
+      await withTransaction(async (client) => {
         const vehiclesToDelete = Array.isArray(driver.vehicles)
           ? driver.vehicles
               .map((v) => Number(v.id))
@@ -621,18 +598,17 @@ export function createControllers({ pool }) {
           await dbTxQuery(
             client,
             `UPDATE dbo."Vehicles" SET "Active" = false, "UpdatedAt" = NOW() WHERE "Id" = ANY($1::bigint[])`,
-            [vehiclesToDelete]
+            [vehiclesToDelete],
           );
         }
 
-        const rows = await dbTxQuery(
+        await dbTxQuery(
           client,
           `UPDATE dbo."Drivers" SET "Active" = false, "UpdatedAt" = NOW() WHERE "Id" = $1 RETURNING *`,
-          [id]
+          [id],
         );
-
-        return camelcaseKeys(rows[0]);
       });
+
       invalidateCachePrefix(CACHE_KEYS.drivers);
       invalidateCachePrefix(CACHE_KEYS.vehicles);
 
@@ -646,7 +622,6 @@ export function createControllers({ pool }) {
     }
   }
 
-  // ------------ User ------------
   async function getUsers(req, res) {
     try {
       const cached = crudCache.get(CACHE_KEYS.users);
@@ -655,15 +630,18 @@ export function createControllers({ pool }) {
       }
 
       const rows = await dbQuery(
-        `SELECT * FROM dbo."User" WHERE "Active" = true ORDER BY GREATEST("CreatedAt", "UpdatedAt") DESC`
+        `SELECT * FROM dbo."User" WHERE "Active" = true ORDER BY GREATEST("CreatedAt", "UpdatedAt") DESC`,
       );
       const data = camelcaseKeys(rows);
       crudCache.set(CACHE_KEYS.users, data);
 
-      return res.json({ success: true, data: data.map(x=> {
-        delete x?.password;
-        return x;
-      }) });
+      return res.json({
+        success: true,
+        data: data.map((x) => {
+          delete x?.password;
+          return x;
+        }),
+      });
     } catch (err) {
       console.error(err);
       return res.status(500).json({
@@ -676,32 +654,45 @@ export function createControllers({ pool }) {
   async function loginUser(req, res) {
     const { username, password } = req.body || {};
     try {
-
-      if(!username) {
-        return res.status(401).json({ success: false, message: "Username should not be null or empty" });
+      if (!username) {
+        return res
+          .status(401)
+          .json({
+            success: false,
+            message: "Username should not be null or empty",
+          });
       }
 
-      if(!password) {
-        return res.status(401).json({ success: false, message: "Password should not be null or empty" });
+      if (!password) {
+        return res
+          .status(401)
+          .json({
+            success: false,
+            message: "Password should not be null or empty",
+          });
       }
 
       const rows = await dbQuery(
         `SELECT * FROM dbo."User" WHERE "Username" = $1 AND "Active" = true`,
-        [username]
+        [username],
       );
 
-      if(!rows.length) {
-        return res.status(401).json({ success: false, message: "User not found" });
+      if (!rows.length) {
+        return res
+          .status(401)
+          .json({ success: false, message: "User not found" });
       }
 
       const user = camelcaseKeys(rows[0]);
+      const isMatch = await compare(user.password, password);
 
-      const isMatch = await compare(user.password , password);
       if (!isMatch) {
-        return res.status(401).json({ success: false, message: "Password incorrect" });
+        return res
+          .status(401)
+          .json({ success: false, message: "Password incorrect" });
       }
-      delete user.password;
 
+      delete user.password;
       return res.json({ success: true, data: user });
     } catch (err) {
       console.error(err);
@@ -715,55 +706,70 @@ export function createControllers({ pool }) {
   async function upsertUser(req, res) {
     const { id, name, username, password } = req.body || {};
     try {
-      if(!username) {
-        return res.status(401).json({ success: false, message: "Username should not be null or empty" });
+      if (!username) {
+        return res
+          .status(401)
+          .json({
+            success: false,
+            message: "Username should not be null or empty",
+          });
       }
 
-      if(!name) {
-        return res.status(401).json({ success: false, message: "Name should not be null or empty" });
+      if (!name) {
+        return res
+          .status(401)
+          .json({
+            success: false,
+            message: "Name should not be null or empty",
+          });
       }
+
       let rows;
       if (id) {
         rows = await dbQuery(
-          `UPDATE dbo."User" 
+          `UPDATE dbo."User"
            SET "Name" = $1, "Username" = $2, "UpdatedAt" = NOW()
-           WHERE "Id" = $3 
+           WHERE "Id" = $3
            RETURNING *`,
-          [name, username, id]
+          [name, username, id],
         );
       } else {
-
-        if(!password) {
-          return res.status(401).json({ success: false, message: "Password should not be null or empty" });
+        if (!password) {
+          return res
+            .status(401)
+            .json({
+              success: false,
+              message: "Password should not be null or empty",
+            });
         }
+
         const passwordHash = await hashPassword(password);
         rows = await dbQuery(
-          `INSERT INTO dbo."User" ("Name", "Username", "Password") 
-           VALUES ($1, $2, $3) 
+          `INSERT INTO dbo."User" ("Name", "Username", "Password")
+           VALUES ($1, $2, $3)
            RETURNING *`,
-          [name, username, passwordHash]
+          [name, username, passwordHash],
         );
       }
 
       invalidateCachePrefix(CACHE_KEYS.users);
 
       const user = camelcaseKeys(rows[0]);
-
       delete user?.password;
 
-      return res.json({ success: true, data:  user});
+      return res.json({ success: true, data: user });
     } catch (err) {
       console.error(err);
       if (err?.message?.includes("duplicate")) {
         return res
           .status(400)
           .json({ success: false, message: "User already exists" });
-      } else {
-        return res.status(500).json({
-          success: false,
-          message: "Failed to upsert User",
-        });
       }
+
+      return res.status(500).json({
+        success: false,
+        message: "Failed to upsert User",
+      });
     }
   }
 
@@ -771,28 +777,36 @@ export function createControllers({ pool }) {
     const { id } = req.params;
     const { password } = req.body || {};
     try {
-
-      if(!id) {
-        return res.status(401).json({ success: false, message: "User id should not be null or empty" });
+      if (!id) {
+        return res
+          .status(401)
+          .json({
+            success: false,
+            message: "User id should not be null or empty",
+          });
       }
 
-      if(!password) {
-        return res.status(401).json({ success: false, message: "Password should not be null or empty" });
+      if (!password) {
+        return res
+          .status(401)
+          .json({
+            success: false,
+            message: "Password should not be null or empty",
+          });
       }
 
       const passwordHash = await hashPassword(password);
-      let rows = await dbQuery(
-        `UPDATE dbo."User" 
-           SET "Password" = $1, "UpdatedAt" = NOW()
-           WHERE "Id" = $2 
-           RETURNING *`,
-        [passwordHash, id]
+      const rows = await dbQuery(
+        `UPDATE dbo."User"
+         SET "Password" = $1, "UpdatedAt" = NOW()
+         WHERE "Id" = $2
+         RETURNING *`,
+        [passwordHash, id],
       );
 
       invalidateCachePrefix(CACHE_KEYS.users);
 
       const user = camelcaseKeys(rows[0]);
-
       delete user?.password;
 
       return res.json({ success: true, data: user });
@@ -809,48 +823,65 @@ export function createControllers({ pool }) {
     const { id } = req.params;
     const { oldPassword, password } = req.body || {};
     try {
-
-      if(!id) {
-        return res.status(401).json({ success: false, message: "User id should not be null or empty" });
+      if (!id) {
+        return res
+          .status(401)
+          .json({
+            success: false,
+            message: "User id should not be null or empty",
+          });
       }
 
-      if(!oldPassword) {
-        return res.status(401).json({ success: false, message: "Old password should not be null or empty" });
+      if (!oldPassword) {
+        return res
+          .status(401)
+          .json({
+            success: false,
+            message: "Old password should not be null or empty",
+          });
       }
 
-      if(!password) {
-        return res.status(401).json({ success: false, message: "Password should not be null or empty" });
+      if (!password) {
+        return res
+          .status(401)
+          .json({
+            success: false,
+            message: "Password should not be null or empty",
+          });
       }
 
       let rows = await dbQuery(
         `SELECT * FROM dbo."User" WHERE "Id" = $1 AND "Active" = true`,
-        [id]
+        [id],
       );
 
-      if(!rows.length) {
-        return res.status(401).json({ success: false, message: "User not found" });
+      if (!rows.length) {
+        return res
+          .status(401)
+          .json({ success: false, message: "User not found" });
       }
 
       let user = camelcaseKeys(rows[0]);
+      const isMatch = await compare(user.password, oldPassword);
 
-      const isMatch = await compare(user.password , oldPassword);
       if (!isMatch) {
-        return res.status(401).json({ success: false, message: "Old password incorrect" });
+        return res
+          .status(401)
+          .json({ success: false, message: "Old password incorrect" });
       }
 
       const passwordHash = await hashPassword(password);
       rows = await dbQuery(
-        `UPDATE dbo."User" 
-           SET "Password" = $1, "UpdatedAt" = NOW()
-           WHERE "Id" = $2 
-           RETURNING *`,
-        [passwordHash, id]
+        `UPDATE dbo."User"
+         SET "Password" = $1, "UpdatedAt" = NOW()
+         WHERE "Id" = $2
+         RETURNING *`,
+        [passwordHash, id],
       );
 
       invalidateCachePrefix(CACHE_KEYS.users);
 
       user = camelcaseKeys(rows[0]);
-
       delete user?.password;
 
       return res.json({ success: true, data: user });
@@ -867,18 +898,18 @@ export function createControllers({ pool }) {
     const { id } = req.params;
     try {
       const rows = await dbQuery(
-        `UPDATE dbo."User" 
-         SET "Active" = false, "UpdatedAt" = NOW() 
-         WHERE "Id" = $1 
-         RETURNING "Id", "Name", "Username", "Active" `,
-        [id]
+        `UPDATE dbo."User"
+         SET "Active" = false, "UpdatedAt" = NOW()
+         WHERE "Id" = $1
+         RETURNING "Id", "Name", "Username", "Active"`,
+        [id],
       );
+
       if (!camelcaseKeys(rows[0])) {
         return res.status(404).json({ success: false, message: "Not found" });
       }
 
       invalidateCachePrefix(CACHE_KEYS.users);
-
       return res.json({ success: true });
     } catch (err) {
       console.error(err);
@@ -889,20 +920,15 @@ export function createControllers({ pool }) {
     }
   }
 
-  // ------------ Vehicles ------------
   async function getVehicles(req, res) {
     try {
-      // Read limit/offset from query
       let { limit, offset, driver } = req.query;
 
       driver = !isNaN(Number(driver)) ? Number(driver) : null;
-
       limit = parseInt(limit, 10);
       offset = parseInt(offset, 10);
-
       if (Number.isNaN(offset) || offset < 0) offset = 0;
 
-      // Per-page cache key (limit + offset)
       const cacheKey = driver
         ? `${CACHE_KEYS.vehicles}:${limit}:${offset}:${driver}`
         : `${CACHE_KEYS.vehicles}:${limit}:${offset}`;
@@ -916,30 +942,28 @@ export function createControllers({ pool }) {
         });
       }
 
-      // Query only the current page + total count
       const [rows, totalRows] = await Promise.all([
         dbQuery(
           driver
-            ? `
-            SELECT * FROM dbo."Vehicles" 
-            WHERE "Active" = true AND "Driver"->>'id' = $3 
-            ORDER BY GREATEST("CreatedAt", "UpdatedAt") DESC
-            LIMIT $1 OFFSET $2`
-            : `SELECT * FROM dbo."Vehicles" 
-               WHERE "Active" = true 
+            ? `SELECT * FROM dbo."Vehicles"
+               WHERE "Active" = true AND "Driver"->>'id' = $3
+               ORDER BY GREATEST("CreatedAt", "UpdatedAt") DESC
+               LIMIT $1 OFFSET $2`
+            : `SELECT * FROM dbo."Vehicles"
+               WHERE "Active" = true
                ORDER BY GREATEST("CreatedAt", "UpdatedAt") DESC
                LIMIT $1 OFFSET $2`,
-          driver ? [limit, offset, driver] : [limit, offset]
+          driver ? [limit, offset, driver] : [limit, offset],
         ),
         dbQuery(
           driver
-            ? `SELECT COUNT(*) AS "total" 
-               FROM dbo."Vehicles" 
+            ? `SELECT COUNT(*) AS "total"
+               FROM dbo."Vehicles"
                WHERE "Active" = true AND "Driver"->>'id' = $1`
-            : `SELECT COUNT(*) AS "total" 
-               FROM dbo."Vehicles" 
+            : `SELECT COUNT(*) AS "total"
+               FROM dbo."Vehicles"
                WHERE "Active" = true`,
-          driver ? [driver] : []
+          driver ? [driver] : [],
         ),
       ]);
 
@@ -947,8 +971,6 @@ export function createControllers({ pool }) {
       const total = Number(totalRows?.[0]?.total ?? 0);
 
       const payload = { data, total };
-
-      // Cache this page
       crudCache.set(cacheKey, payload);
 
       return res.json({
@@ -974,36 +996,34 @@ export function createControllers({ pool }) {
           .json({ success: false, message: "Missing driver Id" });
       }
 
-      // Fetch driver (no transaction needed here)
       const driverRes = await dbQuery(
         `SELECT * FROM dbo."Drivers" WHERE "Active" = true AND "Id" = $1`,
-        [driverId]
+        [driverId],
       );
+
       if (!driverRes.length) {
         return res
           .status(400)
           .json({ success: false, message: "Vehicle driver not found" });
       }
+
       const driver = camelcaseKeys(driverRes[0]);
 
-      // Multi-step write in one transaction
       const savedVehicle = await withTransaction(async (client) => {
         if (id) {
-          // 1) Update Vehicle
           const vehicleRows = await dbTxQuery(
             client,
-            `UPDATE dbo."Vehicles" 
-             SET "PlateNumber" = $1, "Type" = $2, "Model" = $3, "Brand" = $4, "UpdatedAt" = NOW() 
-             WHERE "Id" = $5 
+            `UPDATE dbo."Vehicles"
+             SET "PlateNumber" = $1, "Type" = $2, "Model" = $3, "Brand" = $4, "UpdatedAt" = NOW()
+             WHERE "Id" = $5
              RETURNING *`,
-            [plateNumber, type, model, brand, id]
+            [plateNumber, type, model, brand, id],
           );
 
           const updatedVehicle = camelcaseKeys(vehicleRows[0]);
-
-          // 2) Sync Driver.Vehicles[]
           const driverVehicles = driver?.vehicles ?? [];
           const vehicleIndex = driverVehicles.findIndex((v) => v.id === id);
+
           if (vehicleIndex !== -1) {
             driverVehicles[vehicleIndex] = {
               id,
@@ -1016,46 +1036,44 @@ export function createControllers({ pool }) {
 
           await dbTxQuery(
             client,
-            `UPDATE dbo."Drivers" 
+            `UPDATE dbo."Drivers"
              SET "Vehicles" = $1, "UpdatedAt" = NOW()
              WHERE "Id" = $2`,
-            [JSON.stringify(driverVehicles), driverId]
+            [JSON.stringify(driverVehicles), driverId],
           );
 
           return updatedVehicle;
-        } else {
-          // 1) Insert new Vehicle
-          const vehicleRows = await dbTxQuery(
-            client,
-            `INSERT INTO dbo."Vehicles" 
-             ("PlateNumber", "Driver", "Type", "Model", "Brand") 
-             VALUES ($1, $2, $3, $4, $5) 
-             RETURNING *`,
-            [plateNumber, JSON.stringify(driver), type, model, brand]
-          );
-
-          const vehicle = camelcaseKeys(vehicleRows[0]);
-
-          // 2) Append to Driver.Vehicles[]
-          const driverVehicles = driver?.vehicles ?? [];
-          driverVehicles.push({
-            id: vehicle?.id,
-            plateNumber: vehicle?.plateNumber,
-            type: vehicle?.type,
-            model: vehicle?.model,
-            brand: vehicle?.brand,
-          });
-
-          await dbTxQuery(
-            client,
-            `UPDATE dbo."Drivers" 
-             SET "Vehicles" = $1, "UpdatedAt" = NOW() 
-             WHERE "Id" = $2`,
-            [JSON.stringify(driverVehicles), driverId]
-          );
-
-          return vehicle;
         }
+
+        const vehicleRows = await dbTxQuery(
+          client,
+          `INSERT INTO dbo."Vehicles"
+           ("PlateNumber", "Driver", "Type", "Model", "Brand")
+           VALUES ($1, $2, $3, $4, $5)
+           RETURNING *`,
+          [plateNumber, JSON.stringify(driver), type, model, brand],
+        );
+
+        const vehicle = camelcaseKeys(vehicleRows[0]);
+        const driverVehicles = driver?.vehicles ?? [];
+
+        driverVehicles.push({
+          id: vehicle?.id,
+          plateNumber: vehicle?.plateNumber,
+          type: vehicle?.type,
+          model: vehicle?.model,
+          brand: vehicle?.brand,
+        });
+
+        await dbTxQuery(
+          client,
+          `UPDATE dbo."Drivers"
+           SET "Vehicles" = $1, "UpdatedAt" = NOW()
+           WHERE "Id" = $2`,
+          [JSON.stringify(driverVehicles), driverId],
+        );
+
+        return vehicle;
       });
 
       invalidateCachePrefix(CACHE_KEYS.vehicles);
@@ -1068,51 +1086,53 @@ export function createControllers({ pool }) {
         return res
           .status(400)
           .json({ success: false, message: "Vehicle already exists" });
-      } else {
-        return res.status(500).json({
-          success: false,
-          message: "Failed to upsert Vehicle",
-        });
       }
+
+      return res.status(500).json({
+        success: false,
+        message: "Failed to upsert Vehicle",
+      });
     }
   }
 
   async function deleteVehicle(req, res) {
     const { id } = req.params;
     try {
-      // Fetch driver
       let driverRes = await dbQuery(
         `SELECT * FROM dbo."Drivers" WHERE "Active" = true AND EXISTS (
           SELECT 1
           FROM jsonb_array_elements("Vehicles") AS v(obj)
           WHERE v.obj->>'id' = $1
         )`,
-        [id]
+        [id],
       );
+
       if (!driverRes.length) {
         return res
           .status(400)
           .json({ success: false, message: "Vehicle driver not found" });
       }
+
       const driver = camelcaseKeys(driverRes[0]);
-      const result = await withTransaction(async (client) => {
-        const rows = await dbTxQuery(
+
+      await withTransaction(async (client) => {
+        await dbTxQuery(
           client,
-          `UPDATE dbo."Vehicles" SET "Active" = false, "UpdatedAt" = NOW() WHERE "Id" = $1 RETURNING * `,
-          [id]
+          `UPDATE dbo."Vehicles" SET "Active" = false, "UpdatedAt" = NOW() WHERE "Id" = $1 RETURNING *`,
+          [id],
         );
 
         const driverVehicles = driver.vehicles?.filter(
-          (x) => x.id.toString() !== id.toString()
+          (x) => x.id.toString() !== id.toString(),
         );
-        driverRes = await dbTxQuery(
+
+        await dbTxQuery(
           client,
-          `UPDATE dbo."Drivers" 
-            SET "Vehicles" = $1, "UpdatedAt" = NOW() 
-            WHERE "Id" = $2`,
-          [JSON.stringify(driverVehicles), driver?.id]
+          `UPDATE dbo."Drivers"
+           SET "Vehicles" = $1, "UpdatedAt" = NOW()
+           WHERE "Id" = $2`,
+          [JSON.stringify(driverVehicles), driver?.id],
         );
-        return camelcaseKeys(rows[0]);
       });
 
       invalidateCachePrefix(CACHE_KEYS.vehicles);
@@ -1128,7 +1148,6 @@ export function createControllers({ pool }) {
     }
   }
 
-  // expose everything to routes.js
   return {
     getPublicConfig,
     getVehicleBrands,

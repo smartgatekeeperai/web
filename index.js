@@ -1,29 +1,26 @@
 // index.js
-import express from 'express';
-import cors from 'cors';
-import multer from 'multer';
-import dotenv from 'dotenv';
-import pkg from 'pg';
-import path from 'path';
-import { glob } from 'glob';
-import { registerRoutes } from './routes.js';
-import Pusher from "pusher";
-
-// scan public/*.html
-const htmlFiles = await glob('public/*.html');
-console.log(htmlFiles);
-
-// ✅ cross-platform: just keep the filename (drivers.html, vehicles.html, ...)
-const webRoutes = htmlFiles.map((x) => path.basename(x));
-
-console.log(webRoutes);
+import express from "express";
+import cors from "cors";
+import dotenv from "dotenv";
+import pkg from "pg";
+import path from "path";
+import { glob } from "glob";
+import { registerRoutes } from "./routes.js";
 
 dotenv.config();
+
+// scan public/*.html
+const htmlFiles = await glob("public/*.html");
+console.log(htmlFiles);
+
+// cross-platform: keep only the filename
+const webRoutes = htmlFiles.map((x) => path.basename(x));
+console.log(webRoutes);
 
 const { Pool } = pkg;
 
 // ----------------------------------------------------
-// Postgres pool (APIKeyManagement table)
+// Postgres pool
 // ----------------------------------------------------
 const pool = new Pool({
   user: process.env.DB_USER,
@@ -31,11 +28,10 @@ const pool = new Pool({
   database: process.env.DB_NAME,
   password: process.env.DB_PASSWORD,
   port: Number(process.env.DB_PORT || 5432),
-  ssl: process.env.DB_SSL === 'true' || false,
+  ssl: process.env.DB_SSL === "true" || false,
 });
 
-// Optional: set PORT in .env (e.g. 3000)
-const PORT = process.env.PORT || 8000;
+const PORT = Number(process.env.PORT || 8000);
 
 // ----------------------------------------------------
 // Express app
@@ -44,26 +40,19 @@ const app = express();
 
 app.use(
   cors({
-    origin: '*',
+    origin: "*",
     credentials: true,
-    methods: '*',
-    allowedHeaders: '*',
+    methods: "*",
+    allowedHeaders: "*",
   })
 );
 
 app.use(express.json());
 
 // ----------------------------------------------------
-// Multer: keep uploaded image in memory as Buffer
-// ----------------------------------------------------
-const upload = multer({
-  storage: multer.memoryStorage(),
-});
-
-// ----------------------------------------------------
 // Public dir
 // ----------------------------------------------------
-const publicDir = path.join(process.cwd(), 'public');
+const publicDir = path.join(process.cwd(), "public");
 
 // ----------------------------------------------------
 // Register all routes (web + API)
@@ -73,17 +62,23 @@ registerRoutes(app, { pool, webRoutes, publicDir });
 // ----------------------------------------------------
 // Local dev server (disabled on Vercel)
 // ----------------------------------------------------
-if (process.env.VERCEL !== '1') {
-  app.listen(PORT, () => {
-    console.log(`🚀 Groq OCR server running on http://0.0.0.0:${PORT}`);
+if (process.env.VERCEL !== "1") {
+  app.listen(PORT, "0.0.0.0", () => {
+    console.log(`🚀 Smart Gate Keeper web server running on http://0.0.0.0:${PORT}`);
+
     for (const file of webRoutes) {
-      const name = file.replace('.html', '');
-      if (name.includes('index')) {
+      const name = file.replace(".html", "");
+      if (name.includes("index")) {
         console.log(`dashboard: http://localhost:${PORT}/dashboard`);
       } else {
         console.log(`${name}: http://localhost:${PORT}/${name}`);
       }
     }
+
+    console.log("[ENV] NODE_ENV =", process.env.NODE_ENV);
+    console.log("[ENV] USE_LOCAL_PUSHER =", process.env.USE_LOCAL_PUSHER);
+    console.log("[ENV] PUSHER_HOST =", process.env.PUSHER_HOST);
+    console.log("[ENV] PUSHER_PORT =", process.env.PUSHER_PORT);
   });
 }
 

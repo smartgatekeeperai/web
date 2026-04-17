@@ -1,7 +1,7 @@
 // public/js/layout.js
 document.addEventListener("DOMContentLoaded", async () => {
   const isProd = !["localhost", "127.", "192.168.", "10."].some((prefix) =>
-    location.hostname.startsWith(prefix)
+    location.hostname.startsWith(prefix),
   );
 
   // Pages that should NOT have sidebar/topbar layout
@@ -27,7 +27,8 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     const id = obj.id ?? obj.userId ?? obj._id ?? null;
     const name = typeof obj.name === "string" ? obj.name.trim() : "";
-    const username = typeof obj.username === "string" ? obj.username.trim() : "";
+    const username =
+      typeof obj.username === "string" ? obj.username.trim() : "";
 
     // require username
     if (!username) return null;
@@ -110,7 +111,10 @@ document.addEventListener("DOMContentLoaded", async () => {
       const resp = await fetch("/api/role-types/", { method: "GET" });
       if (!resp.ok) throw new Error(`Failed to load Role types`);
       const data = await resp.json();
-      localStorage.setItem("role-types", data?.data?.map((x) => x.name));
+      localStorage.setItem(
+        "role-types",
+        data?.data?.map((x) => x.name),
+      );
     } catch (err) {
       console.error(err);
       await window.showAlert?.({
@@ -128,7 +132,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       const data = await resp.json();
       localStorage.setItem(
         "identification-types",
-        data?.data?.map((x) => x.name)
+        data?.data?.map((x) => x.name),
       );
     } catch (err) {
       console.error(err);
@@ -141,7 +145,11 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 
   if (!isLayoutExempt) {
-    Promise.all([loadVehicleBrands(), loadRoleType(), loadIdentificationTypes()]);
+    Promise.all([
+      loadVehicleBrands(),
+      loadRoleType(),
+      loadIdentificationTypes(),
+    ]);
   }
 
   // ---------------------------
@@ -279,24 +287,95 @@ document.addEventListener("DOMContentLoaded", async () => {
   // ---------------------------
   // Global helpers (available everywhere)
   // ---------------------------
+  window.setAIURL = function (url) {
+    const clean = String(url || "").trim().replace(/\/+$/, "");
+    if (!clean) {
+      localStorage.removeItem("ai-base-url");
+      return;
+    }
+    localStorage.setItem("ai-base-url", clean);
+  };
+
   window.getAIURL = () => {
-    return `${
-      isProd
-        ? "https://smartgatekeeperai-vehicle-detector.hf.space"
-        : "http://10.182.54.46:8000"
-    }`;
+    const hostname = window.location.hostname;
+    const savedOverride = (localStorage.getItem("ai-base-url") || "")
+      .trim()
+      .replace(/\/+$/, "");
+
+    const isPrivateIpv4 =
+      /^192\.168\./.test(hostname) ||
+      /^10\./.test(hostname) ||
+      /^172\.(1[6-9]|2\d|3[0-1])\./.test(hostname);
+
+    const isLocalhost = hostname === "localhost" || hostname === "127.0.0.1";
+
+    // Production / public domain
+    if (!isLocalhost && !isPrivateIpv4) {
+      return "https://smartgatekeeperai-vehicle-detector.hf.space";
+    }
+
+    // If dashboard is opened via localhost, prefer saved override first
+    if (isLocalhost && savedOverride) {
+      return savedOverride;
+    }
+
+    // If dashboard is opened using LAN IP, reuse same machine IP and detector port
+    if (isPrivateIpv4) {
+      return `http://${hostname}:8000`;
+    }
+
+    // Final localhost fallback
+    return "http://localhost:8000";
+  };
+
+  let publicConfigCache = null;
+
+  async function loadPublicConfig(names = []) {
+    const uniqueNames = [...new Set((names || []).filter(Boolean))];
+    if (!uniqueNames.length) return {};
+
+    if (publicConfigCache) {
+      return publicConfigCache;
+    }
+
+    const query = encodeURIComponent(uniqueNames.join(","));
+    const resp = await fetch(`/api/public-config?names=${query}`, {
+      method: "GET",
+      cache: "no-store",
+    });
+
+    if (!resp.ok) {
+      throw new Error(`Failed to load public config (${resp.status})`);
+    }
+
+    const result = await resp.json();
+    if (!result?.success) {
+      throw new Error(result?.message || "Failed to load public config");
+    }
+
+    publicConfigCache = result?.data || {};
+    return publicConfigCache;
+  }
+
+  window.getPusherConfig = async () => {
+    const config = await loadPublicConfig(["pusher"]);
+    return config?.pusher || null;
   };
 
   window.getRoleTypes = function () {
-    return (localStorage.getItem("role-types") ?? "")
-      ?.split(",")
-      ?.map((x) => x.trim()) ?? [];
+    return (
+      (localStorage.getItem("role-types") ?? "")
+        ?.split(",")
+        ?.map((x) => x.trim()) ?? []
+    );
   };
 
   window.getIdentificationTypes = function () {
-    return (localStorage.getItem("identification-types") ?? "")
-      ?.split(",")
-      ?.map((x) => x.trim()) ?? [];
+    return (
+      (localStorage.getItem("identification-types") ?? "")
+        ?.split(",")
+        ?.map((x) => x.trim()) ?? []
+    );
   };
 
   window.getVehicleBrands = function () {
@@ -413,7 +492,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       () => {
         if (listEl.style.display === "block") positionList();
       },
-      true
+      true,
     );
   };
 
@@ -436,7 +515,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   const userMenu = document.getElementById("user-menu");
   const userMenuHeader = document.getElementById("user-menu-header");
   const userMenuChangePassword = document.getElementById(
-    "user-menu-change-password"
+    "user-menu-change-password",
   );
   const userMenuLogout = document.getElementById("user-menu-logout");
 
@@ -812,7 +891,6 @@ document.addEventListener("DOMContentLoaded", async () => {
           </div>
         `;
 
-        // Enable show/hide on these password fields (uses users.css behavior)
         initPasswordToggles(bodyEl);
       },
       onSubmit: async ({ close }) => {
@@ -821,9 +899,8 @@ document.addEventListener("DOMContentLoaded", async () => {
         const password =
           document.getElementById("new-password-input")?.value.trim() || "";
         const confirmPassword =
-          document
-            .getElementById("confirm-new-password-input")
-            ?.value.trim() || "";
+          document.getElementById("confirm-new-password-input")?.value.trim() ||
+          "";
 
         if (!oldPassword || !password || !confirmPassword) {
           await window.showAlert?.({
@@ -866,7 +943,7 @@ document.addEventListener("DOMContentLoaded", async () => {
               method: "PUT",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({ oldPassword, password }),
-            }
+            },
           );
 
           const result = await readJsonSafe(resp);
@@ -883,7 +960,6 @@ document.addEventListener("DOMContentLoaded", async () => {
             return;
           }
 
-          // response body = { success: true, data: { id, username, name } }
           const updatedUser = result?.data;
 
           if (!updatedUser?.username) {
@@ -896,7 +972,6 @@ document.addEventListener("DOMContentLoaded", async () => {
             return;
           }
 
-          // keep storage/UI consistent
           saveUserToStorage(updatedUser);
           currentUser = getUserFromStorage();
           applyUserToUI(currentUser);

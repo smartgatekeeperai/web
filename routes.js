@@ -37,6 +37,12 @@ export function registerRoutes(app, { pool, webRoutes, publicDir }) {
   app.use(express.static(publicDir));
 
   // ----------------------------------------------------
+  // Public safe config route
+  // ----------------------------------------------------
+  app.get("/api/public-config", controllers.getPublicConfig);
+
+
+  // ----------------------------------------------------
   // Route: GET /vehicle-brands
   // ----------------------------------------------------
   app.get("/api/vehicle-brands", controllers.getVehicleBrands);
