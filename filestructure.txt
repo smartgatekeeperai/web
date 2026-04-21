@@ -43,6 +43,8 @@
         |-- role-types.js
         |-- users.js
         |-- vehicles.js
+    |-- json
+        |-- vehicle-brands.json
     |-- lights.html
     |-- login.html
     |-- role-types.html

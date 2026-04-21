@@ -1,0 +1,415 @@
+[
+    {
+        "id": 2,
+        "name": "Aston Martin",
+        "slug": "aston-martin",
+        "logo": "https://images.topgear.com.ph/topgear/images/2018/09/08/aston-martin-1536343199.png",
+        "vehicle_type": "car"
+    },
+    {
+        "id": 3,
+        "name": "Audi",
+        "slug": "audi",
+        "logo": "https://images.topgear.com.ph/topgear/images/2018/09/08/audi-1536343541.png",
+        "vehicle_type": "car"
+    },
+    {
+        "id": 90,
+        "name": "BAIC",
+        "slug": "baic",
+        "logo": "https://images.topgear.com.ph/topgear/images/2018/10/03/baic-1538547350.png",
+        "vehicle_type": "car"
+    },
+    {
+        "id": 4,
+        "name": "Bentley",
+        "slug": "bentley",
+        "logo": "https://images.topgear.com.ph/topgear/images/2021/01/29/bentley-1611919127.png",
+        "vehicle_type": "car"
+    },
+    {
+        "id": 5,
+        "name": "BMW",
+        "slug": "bmw",
+        "logo": "https://images.topgear.com.ph/topgear/images/2018/09/10/bmw-1536582866.png",
+        "vehicle_type": "car"
+    },
+    {
+        "id": 95,
+        "name": "BYD",
+        "slug": "byd",
+        "logo": "https://images.topgear.com.ph/topgear/images/2022/07/19/byd-new-logo-1658229475.jpg",
+        "vehicle_type": "car"
+    },
+    {
+        "id": 139,
+        "name": "Changan",
+        "slug": "changan",
+        "logo": "https://images.topgear.com.ph/topgear/images/2021/01/29/changan.png",
+        "vehicle_type": "car"
+    },
+    {
+        "id": 10,
+        "name": "Chery",
+        "slug": "chery",
+        "logo": "https://images.topgear.com.ph/topgear/images/2019/12/02/chery-1575274468.png",
+        "vehicle_type": "car"
+    },
+    {
+        "id": 11,
+        "name": "Chevrolet",
+        "slug": "chevrolet",
+        "logo": "https://images.topgear.com.ph/topgear/images/2018/09/10/chevrolet-1536582537.png",
+        "vehicle_type": "car"
+    },
+    {
+        "id": 12,
+        "name": "Chrysler",
+        "slug": "chrysler",
+        "logo": "https://images.topgear.com.ph/topgear/images/2021/03/12/chrysler-1615523499.png",
+        "vehicle_type": "car"
+    },
+    {
+        "id": 15,
+        "name": "Dodge",
+        "slug": "dodge",
+        "logo": "https://images.topgear.com.ph/topgear/images/2021/03/12/dodge-1615522839.png",
+        "vehicle_type": "car"
+    },
+    {
+        "id": 146,
+        "name": "Dongfeng",
+        "slug": "dongfeng",
+        "logo": "https://images.topgear.com.ph/topgear/images/2023/10/23/dongfeng-logo-1698053503.png",
+        "vehicle_type": "car"
+    },
+    {
+        "id": 16,
+        "name": "Ferrari",
+        "slug": "ferrari",
+        "logo": "https://images.topgear.com.ph/topgear/images/2018/11/08/ferrari-1541663909.png",
+        "vehicle_type": "car"
+    },
+    {
+        "id": 18,
+        "name": "Ford",
+        "slug": "ford",
+        "logo": "https://images.topgear.com.ph/topgear/images/2018/09/08/ford-1536343830.png",
+        "vehicle_type": "car"
+    },
+    {
+        "id": 19,
+        "name": "Foton",
+        "slug": "foton",
+        "logo": "https://images.topgear.com.ph/topgear/images/2021/02/12/foton-1613116364.png",
+        "vehicle_type": "car"
+    },
+    {
+        "id": 129,
+        "name": "GAC Motor",
+        "slug": "gac-motor",
+        "logo": "https://images.topgear.com.ph/topgear/images/2019/03/04/gac-1551683022.png",
+        "vehicle_type": "car"
+    },
+    {
+        "id": 20,
+        "name": "Geely",
+        "slug": "geely",
+        "logo": "https://images.topgear.com.ph/topgear/images/2019/09/30/geely-1569828701.png",
+        "vehicle_type": "car"
+    },
+    {
+        "id": 143,
+        "name": "GWM",
+        "slug": "gwm",
+        "logo": "https://images.topgear.com.ph/topgear/images/2023/04/24/gwm-logo-1682329042.png",
+        "vehicle_type": "car"
+    },
+    {
+        "id": 23,
+        "name": "Haima",
+        "slug": "haima",
+        "logo": "https://images.topgear.com.ph/topgear/images/2019/05/09/haima-1557369966.png",
+        "vehicle_type": "car"
+    },
+    {
+        "id": 137,
+        "name": "Honda",
+        "slug": "honda",
+        "logo": "https://images.topgear.com.ph/topgear/images/2019/11/15/honda-motorcycle-logo-1573803759.png",
+        "vehicle_type": "motorcycle"
+    },
+    {
+        "id": 25,
+        "name": "Honda",
+        "slug": "honda",
+        "logo": "https://images.topgear.com.ph/topgear/images/2018/09/12/honda-1536751179.png",
+        "vehicle_type": "car"
+    },
+    {
+        "id": 145,
+        "name": "Hongqi",
+        "slug": "hongqi",
+        "logo": "https://images.topgear.com.ph/topgear/images/2023/09/18/hongqi-logo-1695018616.png",
+        "vehicle_type": "car"
+    },
+    {
+        "id": 27,
+        "name": "Hyundai",
+        "slug": "hyundai",
+        "logo": "https://images.topgear.com.ph/topgear/images/2018/09/12/hyundai-1536753756.png",
+        "vehicle_type": "car"
+    },
+    {
+        "id": 30,
+        "name": "Isuzu",
+        "slug": "isuzu",
+        "logo": "https://images.topgear.com.ph/topgear/images/2018/09/17/isuzu-1537132626.png",
+        "vehicle_type": "car"
+    },
+    {
+        "id": 31,
+        "name": "JAC",
+        "slug": "jac",
+        "logo": "https://images.topgear.com.ph/topgear/images/2020/12/15/jac-2020-1608029031.png",
+        "vehicle_type": "car"
+    },
+    {
+        "id": 33,
+        "name": "Jaguar",
+        "slug": "jaguar",
+        "logo": "https://images.topgear.com.ph/topgear/images/2018/10/09/jaguar-1539066616.png",
+        "vehicle_type": "car"
+    },
+    {
+        "id": 34,
+        "name": "Jeep",
+        "slug": "jeep",
+        "logo": "https://images.topgear.com.ph/topgear/images/2020/08/10/jeep-1597059818.png",
+        "vehicle_type": "car"
+    },
+    {
+        "id": 144,
+        "name": "Jetour",
+        "slug": "jetour",
+        "logo": "https://images.topgear.com.ph/topgear/images/2023/06/29/jetour-logo-1688048025.png",
+        "vehicle_type": "car"
+    },
+    {
+        "id": 141,
+        "name": "Kaicene",
+        "slug": "kaicene",
+        "logo": "https://images.topgear.com.ph/topgear/images/2021/04/05/kaicene-1617602260.png",
+        "vehicle_type": "car"
+    },
+    {
+        "id": 135,
+        "name": "Kawasaki",
+        "slug": "kawasaki",
+        "logo": "https://images.topgear.com.ph/topgear/images/2019/11/07/kawasaki-logo-vector-1573114726.png",
+        "vehicle_type": "motorcycle"
+    },
+    {
+        "id": 38,
+        "name": "Kia",
+        "slug": "kia",
+        "logo": "https://images.topgear.com.ph/topgear/images/2021/11/09/kia-2021-1636453227.png",
+        "vehicle_type": "car"
+    },
+    {
+        "id": 39,
+        "name": "Lamborghini",
+        "slug": "lamborghini",
+        "logo": "https://images.topgear.com.ph/topgear/images/2018/11/08/lamborghini-1541682027.png",
+        "vehicle_type": "car"
+    },
+    {
+        "id": 41,
+        "name": "Land Rover",
+        "slug": "land-rover",
+        "logo": "https://images.topgear.com.ph/topgear/images/2018/10/23/land-rover-1540273646.png",
+        "vehicle_type": "car"
+    },
+    {
+        "id": 42,
+        "name": "Lexus",
+        "slug": "lexus",
+        "logo": "https://images.topgear.com.ph/topgear/images/2018/12/19/lexus-1545191536.png",
+        "vehicle_type": "car"
+    },
+    {
+        "id": 45,
+        "name": "Lotus",
+        "slug": "lotus",
+        "logo": "https://images.topgear.com.ph/topgear/images/2019/03/04/lotus-1551682764.png",
+        "vehicle_type": "car"
+    },
+    {
+        "id": 93,
+        "name": "Mahindra",
+        "slug": "mahindra",
+        "logo": "",
+        "vehicle_type": "car"
+    },
+    {
+        "id": 46,
+        "name": "Maserati",
+        "slug": "maserati",
+        "logo": "https://images.topgear.com.ph/topgear/images/2021/04/04/maserati-1617540569.png",
+        "vehicle_type": "car"
+    },
+    {
+        "id": 130,
+        "name": "Maxus",
+        "slug": "maxus",
+        "logo": "https://images.topgear.com.ph/topgear/images/2019/06/21/maxus-1561060463.png",
+        "vehicle_type": "car"
+    },
+    {
+        "id": 47,
+        "name": "Mazda",
+        "slug": "mazda",
+        "logo": "https://images.topgear.com.ph/topgear/images/2018/09/13/mazda-1536827475.png",
+        "vehicle_type": "car"
+    },
+    {
+        "id": 147,
+        "name": "Mazda Test only",
+        "slug": "mazda-test-only",
+        "logo": "https://images.topgear.com.ph/topgear/images/2024/02/08/png-transparent-mazda-logo-mazda-rx-8-car-mazda-premacy-mazda-familia-mazda-emblem-text-trademark-thumbnail-1707361119.png",
+        "vehicle_type": "car"
+    },
+    {
+        "id": 76,
+        "name": "Mercedes-Benz",
+        "slug": "mercedes-benz",
+        "logo": "https://images.topgear.com.ph/topgear/images/2018/11/27/mercedes-benz-1543305928.png",
+        "vehicle_type": "car"
+    },
+    {
+        "id": 91,
+        "name": "MG",
+        "slug": "mg",
+        "logo": "https://images.topgear.com.ph/topgear/images/2018/10/11/mglogo-main-1539224127.jpg",
+        "vehicle_type": "car"
+    },
+    {
+        "id": 48,
+        "name": "Mini",
+        "slug": "mini",
+        "logo": "https://images.topgear.com.ph/topgear/images/2021/04/04/mini-1617540170.png",
+        "vehicle_type": "car"
+    },
+    {
+        "id": 49,
+        "name": "Mitsubishi",
+        "slug": "mitsubishi",
+        "logo": "https://images.topgear.com.ph/topgear/images/2018/09/13/mitsubishi-1536827616.png",
+        "vehicle_type": "car"
+    },
+    {
+        "id": 80,
+        "name": "Nissan",
+        "slug": "nissan",
+        "logo": "https://images.topgear.com.ph/topgear/images/2021/01/18/nissan.png",
+        "vehicle_type": "car"
+    },
+    {
+        "id": 51,
+        "name": "Peugeot",
+        "slug": "peugeot",
+        "logo": "https://images.topgear.com.ph/topgear/images/2022/01/17/peugeot-new-1642422798.jpg",
+        "vehicle_type": "car"
+    },
+    {
+        "id": 52,
+        "name": "Porsche",
+        "slug": "porsche",
+        "logo": "https://images.topgear.com.ph/topgear/images/2021/01/21/porsche-1611215001.png",
+        "vehicle_type": "car"
+    },
+    {
+        "id": 96,
+        "name": "Ram",
+        "slug": "ram",
+        "logo": "https://images.topgear.com.ph/topgear/images/2021/01/22/ram-1611309022.png",
+        "vehicle_type": "car"
+    },
+    {
+        "id": 55,
+        "name": "Rolls Royce",
+        "slug": "rolls-royce",
+        "logo": "https://images.topgear.com.ph/topgear/images/2019/03/14/rolls-royce-1552569684.png",
+        "vehicle_type": "car"
+    },
+    {
+        "id": 57,
+        "name": "Ssangyong",
+        "slug": "ssangyong",
+        "logo": "https://images.topgear.com.ph/topgear/images/2019/01/03/ssangyong-1546509280.png",
+        "vehicle_type": "car"
+    },
+    {
+        "id": 58,
+        "name": "Subaru",
+        "slug": "subaru",
+        "logo": "https://images.topgear.com.ph/topgear/images/2018/09/17/subaru-1537126747.png",
+        "vehicle_type": "car"
+    },
+    {
+        "id": 138,
+        "name": "Suzuki",
+        "slug": "suzuki",
+        "logo": "https://images.topgear.com.ph/topgear/images/2019/11/15/685bc03fef452244b67890c88ce102ab-1573804082.jpg",
+        "vehicle_type": "motorcycle"
+    },
+    {
+        "id": 59,
+        "name": "Suzuki",
+        "slug": "suzuki",
+        "logo": "https://images.topgear.com.ph/topgear/images/2018/09/17/suzuki-1537126280.png",
+        "vehicle_type": "car"
+    },
+    {
+        "id": 94,
+        "name": "Tata",
+        "slug": "tata",
+        "logo": "https://images.topgear.com.ph/topgear/images/2019/09/03/tata-1567507807.png",
+        "vehicle_type": "car"
+    },
+    {
+        "id": 60,
+        "name": "Toyota",
+        "slug": "toyota",
+        "logo": "https://images.topgear.com.ph/topgear/images/2018/09/17/toyota-1537126949.png",
+        "vehicle_type": "car"
+    },
+    {
+        "id": 61,
+        "name": "Volkswagen",
+        "slug": "volkswagen",
+        "logo": "https://images.topgear.com.ph/topgear/images/2021/01/18/volkswagen.png",
+        "vehicle_type": "car"
+    },
+    {
+        "id": 62,
+        "name": "Volvo",
+        "slug": "volvo",
+        "logo": "https://images.topgear.com.ph/topgear/images/2019/03/07/volvo-1551928646.png",
+        "vehicle_type": "car"
+    },
+    {
+        "id": 142,
+        "name": "Weltmeister",
+        "slug": "weltmeister",
+        "logo": "https://images.topgear.com.ph/topgear/images/2022/07/14/weltmeister-logo-1657731283.jpg",
+        "vehicle_type": "car"
+    },
+    {
+        "id": 136,
+        "name": "Yamaha",
+        "slug": "yamaha",
+        "logo": "https://images.topgear.com.ph/topgear/images/2019/11/13/yamaha-official-logo-1573625838.jpg",
+        "vehicle_type": "motorcycle"
+    }
+]

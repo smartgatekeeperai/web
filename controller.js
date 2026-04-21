@@ -2,6 +2,8 @@
 import camelcaseKeys from "camelcase-keys";
 import NodeCache from "node-cache";
 import bcrypt from "bcryptjs";
+import { readFile } from "node:fs/promises";
+import path from "node:path";
 
 // Simple in-memory cache for CRUD
 const crudCache = new NodeCache({
@@ -164,28 +166,41 @@ export function createControllers({ pool }) {
         return res.json({ success: true, data: cached });
       }
 
-      const resp = await fetch(
-        "https://apisearch.topgear.com.ph/topgear/v1/buyers-guide/makes/",
-        {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-            Origin: "https://www.topgear.com.ph",
-          },
-        },
-      );
+      let brands = [];
 
-      if (!resp.ok) {
-        throw new Error("Failed to load vehicle brands");
+      try {
+        const resp = await fetch(
+          "https://apisearch.topgear.com.ph/topgear/v1/buyers-guide/makess/",
+          {
+            method: "GET",
+            headers: {
+              "Content-Type": "application/json",
+              Origin: "https://www.topgear.com.ph",
+            },
+          },
+        );
+
+        if (!resp.ok) {
+          throw new Error(`Remote API failed with status ${resp.status}`);
+        }
+
+        const data = await resp.json();
+        brands = Array.isArray(data) ? data.map((x) => x.name).filter(Boolean) : [];
+      } catch (remoteErr) {
+        console.warn("[getVehicleBrands] remote API failed, using local fallback:", remoteErr?.message || remoteErr);
+
+        const localPath = path.join(process.cwd(), "public", "json", "vehicle-brands.json");
+        const raw = await readFile(localPath, "utf-8");
+        const data = JSON.parse(raw);
+
+        brands = Array.isArray(data) ? data.map((x) => x.name).filter(Boolean) : [];
       }
 
-      const data = await resp.json();
-      const brands = data?.map((x) => x.name) || [];
       crudCache.set(CACHE_KEYS.vehicleBrands, brands);
 
       return res.json({ success: true, data: brands });
     } catch (err) {
-      console.error(err);
+      console.error("[getVehicleBrands] error:", err);
       return res.status(500).json({
         success: false,
         message: "Failed to fetch vehicle brands",
