@@ -1390,12 +1390,6 @@ export function createControllers({ pool }) {
       const tomorrowStartSql = toSqlLocalTimestamp(tomorrowStart);
       const sevenDaysStartSql = toSqlLocalTimestamp(sevenDaysStart);
 
-      const cacheKey = `summary:v2:${todayStartSql.slice(0, 10)}`;
-      const cached = crudCache.get(cacheKey);
-      if (cached) {
-        return res.json(cached);
-      }
-
       const [
         totalTodayRows,
         avgDailyRows,
@@ -1482,7 +1476,8 @@ export function createControllers({ pool }) {
 
       const groupedRanges = [];
       for (let startHour = 0; startHour < 24; startHour += 2) {
-        const count = (hourMap.get(startHour) || 0) + (hourMap.get(startHour + 1) || 0);
+        const count =
+          (hourMap.get(startHour) || 0) + (hourMap.get(startHour + 1) || 0);
         groupedRanges.push({
           label: formatTwoHourRangeLabel(startHour),
           value: count,
@@ -1512,7 +1507,6 @@ export function createControllers({ pool }) {
         },
       };
 
-      crudCache.set(cacheKey, payload);
       return res.json(payload);
     } catch (err) {
       console.error("[getSummary] error:", err);
@@ -1570,12 +1564,6 @@ export function createControllers({ pool }) {
       const nowSql = toSqlLocalTimestamp(now);
       const cutoffSql = toSqlLocalTimestamp(cutoff);
 
-      const cacheKey = `logs:${type}:${value}:${cutoffSql.slice(0, 13)}`;
-      const cached = crudCache.get(cacheKey);
-      if (cached) {
-        return res.json(cached);
-      }
-
       const rows = await dbQuery(
         `
         SELECT *
@@ -1601,7 +1589,6 @@ export function createControllers({ pool }) {
         },
       };
 
-      crudCache.set(cacheKey, payload);
       return res.json(payload);
     } catch (err) {
       console.error("[getLogs] error:", err);
@@ -1611,7 +1598,7 @@ export function createControllers({ pool }) {
       });
     }
   }
-  
+
   async function getChart(req, res) {
     try {
       let { type, value } = req.query;
@@ -1825,12 +1812,6 @@ export function createControllers({ pool }) {
       const nowSql = toSqlLocalTimestamp(now);
       const cutoffSql = toSqlLocalTimestamp(cutoff);
 
-      const cacheKey = `chart:safe:v2:${type}:${value}:${cutoffSql.slice(0, 13)}`;
-      const cached = crudCache.get(cacheKey);
-      if (cached) {
-        return res.json(cached);
-      }
-
       const rows = await dbQuery(
         `
         SELECT "PlateNumber", "CreatedAt", "Vehicle"
@@ -1888,17 +1869,16 @@ export function createControllers({ pool }) {
         },
       };
 
-      crudCache.set(cacheKey, payload);
-      return res.json(payload);
-    } catch (err) {
-      console.error("[getChart] error:", err);
-      return res.status(500).json({
-        success: false,
-        message: "Failed to fetch chart data",
-        error: err?.message || "Unknown error",
-      });
-    }
-  }
+        return res.json(payload);
+      } catch (err) {
+        console.error("[getChart] error:", err);
+        return res.status(500).json({
+          success: false,
+          message: "Failed to fetch chart data",
+          error: err?.message || "Unknown error",
+        });
+      }
+  } 
 
   return {
     getPublicConfig,

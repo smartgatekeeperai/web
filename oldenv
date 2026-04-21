@@ -1,0 +1,26 @@
+# nodejs environment variables
+
+PORT=3000
+DB_USER=postgres
+DB_HOST=localhost
+DB_NAME=smartgatekeeperaidb
+DB_PASSWORD=admin123
+DB_PORT=5432
+DB_SSL=false
+
+# Pusher Credentials (Replace with your actual values)
+
+NODE_ENV=development
+USE_LOCAL_PUSHER=true
+PUSHER_APP_ID=2086487
+PUSHER_KEY=437af9281329a965a6f7
+PUSHER_SECRET=c11adaa371061faed16b
+PUSHER_CLUSTER=ap1  # ignored by soketi but fine
+PUSHER_HOST=192.168.254.103
+PUSHER_PORT=6001
+
+# Security
+BCRYPT_SALT_ROUNDS=10
+
+
+AI_SERVER_URL=http://192.168.254.103:8000

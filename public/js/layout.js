@@ -74,7 +74,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   // ---------------------------
   // AUTH GUARD (redirect if no user)
   // ---------------------------
-  let currentUser = getUserFromStorage(); // NO FALLBACK
+  let currentUser = getUserFromStorage();
 
   if (!isLayoutExempt && !currentUser) {
     if (
@@ -171,7 +171,6 @@ document.addEventListener("DOMContentLoaded", async () => {
         <div id="page-container"></div>
       </div>
 
-      <!-- Reusable global modal (still available for alerts/forms) -->
       <div class="modal-backdrop" id="app-modal-backdrop">
         <div class="modal-container" id="app-modal">
           <div class="modal-header">
@@ -241,7 +240,6 @@ document.addEventListener("DOMContentLoaded", async () => {
 
       <div class="overlay" id="overlay"></div>
 
-      <!-- Reusable global modal -->
       <div class="modal-backdrop" id="app-modal-backdrop">
         <div class="modal-container" id="app-modal">
           <div class="modal-header">
@@ -253,7 +251,6 @@ document.addEventListener("DOMContentLoaded", async () => {
         </div>
       </div>
 
-      <!-- User menu dropdown -->
       <div class="user-menu" id="user-menu">
         <div class="user-menu-card">
           <div class="user-menu-header" id="user-menu-header">
@@ -279,7 +276,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     `;
   }
 
-  // Inject page-specific content
   if (pageTemplate) {
     const clone = pageTemplate.content.cloneNode(true);
     document.getElementById("page-container")?.appendChild(clone);
@@ -287,7 +283,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 
   // ---------------------------
-  // Global helpers (available everywhere)
+  // Global helpers
   // ---------------------------
   window.setAIURL = function (url) {
     const clean = String(url || "").trim().replace(/\/+$/, "");
@@ -311,23 +307,28 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     const isLocalhost = hostname === "localhost" || hostname === "127.0.0.1";
 
-    // Production / public domain
     if (!isLocalhost && !isPrivateIpv4) {
       return "https://smartgatekeeperai-vehicle-detector.hf.space";
     }
 
-    // If dashboard is opened via localhost, prefer saved override first
     if (isLocalhost && savedOverride) {
       return savedOverride;
     }
 
-    // If dashboard is opened using LAN IP, reuse same machine IP and detector port
     if (isPrivateIpv4) {
       return `http://${hostname}:8000`;
     }
 
-    // Final localhost fallback
     return "http://localhost:8000";
+  };
+
+  window.getRealtimeConfig = async () => {
+    const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+    const host = window.location.host;
+    return {
+      mode: "websocket",
+      wsUrl: `${protocol}//${host}/ws`,
+    };
   };
 
   let publicConfigCache = {};
@@ -372,11 +373,6 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     return selected;
   }
-
-  window.getPusherConfig = async () => {
-    const config = await loadPublicConfig(["pusher"]);
-    return config?.pusher || null;
-  };
 
   window.getAIConfig = async () => {
     const config = await loadPublicConfig(["ai"]);
@@ -517,14 +513,8 @@ document.addEventListener("DOMContentLoaded", async () => {
     );
   };
 
-  // ---------------------------
-  // Stop here if page is exempt
-  // ---------------------------
   if (isLayoutExempt) return;
 
-  // ---------------------------
-  // Full layout-only logic below
-  // ---------------------------
   const sidebar = document.getElementById("sidebar");
   const mainContent = document.getElementById("main-content");
   const hamburger = document.getElementById("hamburger");
@@ -572,7 +562,6 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   applyUserToUI(currentUser);
 
-  // ----- user menu dropdown -----
   let isUserMenuOpen = false;
 
   function positionUserMenu() {
@@ -613,7 +602,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     closeUserMenu();
   });
 
-  // active menu title
   menuItems.forEach((item) => {
     const page = item.getAttribute("data-page");
     if (page === currentPage) {
@@ -622,7 +610,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
   });
 
-  // Hamburger click
   hamburger?.addEventListener("click", () => {
     closeUserMenu();
     if (isMobile()) {
@@ -667,9 +654,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     if (isUserMenuOpen) closeUserMenu();
   });
 
-  // -------------------------------------------------------
-  // Helper: init show/hide password toggles (users.css style)
-  // -------------------------------------------------------
   function initPasswordToggles(rootEl) {
     const toggles = rootEl.querySelectorAll(".toggle-password-btn");
     toggles.forEach((btn) => {
@@ -691,7 +675,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     });
   }
 
-  // Header click -> update user details modal (API + confirm)
   userMenuHeader?.addEventListener("click", async () => {
     closeUserMenu();
 
@@ -816,7 +799,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     });
   });
 
-  // Change password (uniform password-field layout + toggle-password-btn)
   userMenuChangePassword?.addEventListener("click", async () => {
     closeUserMenu();
 
@@ -1019,7 +1001,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     });
   });
 
-  // Logout (confirm)
   userMenuLogout?.addEventListener("click", async () => {
     closeUserMenu();
 

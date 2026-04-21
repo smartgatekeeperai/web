@@ -651,53 +651,116 @@
   await loadAIConfig();
   await Promise.all([loadChart(), loadActivityFeed(), loadDashboardStats()]);
 
-  let pusher = null;
-  let channel = null;
-  let videoChannel = null;
+  // ----------------------------------------------------
+  // Native WebSocket realtime
+  // ----------------------------------------------------
+  let ws = null;
+  let wsReconnectTimer = null;
+  let wsManualClose = false;
 
-  try {
-    const cfg = await window.getPusherConfig?.();
-    console.log("[Pusher] config from server:", cfg);
-
-    if (cfg?.key && typeof Pusher !== "undefined") {
-      const { key, ...options } = cfg;
-      pusher = new Pusher(key, options);
-
-      pusher.connection.bind("connected", () => {
-        console.log("[Pusher] connected");
-      });
-
-      pusher.connection.bind("state_change", (states) => {
-        console.log("[Pusher] state change:", states);
-      });
-
-      pusher.connection.bind("error", (err) => {
-        console.warn("[Pusher] connection error:", err);
-      });
-
-      channel = pusher.subscribe("gate-channel");
-      videoChannel = pusher.subscribe("video-channel");
-
-      channel.bind("pusher:subscription_succeeded", () => {
-        console.log("[Pusher] subscribed: gate-channel");
-      });
-
-      channel.bind("pusher:subscription_error", (status) => {
-        console.warn("[Pusher] subscription error: gate-channel", status);
-      });
-
-      videoChannel.bind("pusher:subscription_succeeded", () => {
-        console.log("[Pusher] subscribed: video-channel");
-      });
-
-      videoChannel.bind("pusher:subscription_error", (status) => {
-        console.warn("[Pusher] subscription error: video-channel", status);
-      });
-    } else {
-      console.warn("[Pusher] config missing or Pusher lib unavailable");
+  function clearReconnectTimer() {
+    if (wsReconnectTimer) {
+      clearTimeout(wsReconnectTimer);
+      wsReconnectTimer = null;
     }
-  } catch (err) {
-    console.warn("[Pusher] disabled/fallback mode:", err);
+  }
+
+  function scheduleReconnect() {
+    if (wsManualClose) return;
+    clearReconnectTimer();
+    wsReconnectTimer = setTimeout(() => {
+      connectRealtime();
+    }, 2000);
+  }
+
+  async function connectRealtime() {
+    try {
+      const cfg = await window.getRealtimeConfig?.();
+      console.log("[WS] config =", cfg);
+
+      if (!cfg?.wsUrl) {
+        console.warn("[WS] missing websocket URL");
+        scheduleReconnect();
+        return;
+      }
+
+      if (ws && (ws.readyState === WebSocket.OPEN || ws.readyState === WebSocket.CONNECTING)) {
+        return;
+      }
+
+      ws = new WebSocket(cfg.wsUrl);
+
+      ws.addEventListener("open", () => {
+        console.log("[WS] connected");
+
+        try {
+          ws.send(
+            JSON.stringify({
+              type: "hello",
+              role: "dashboard",
+              ts: Date.now(),
+            }),
+          );
+        } catch (err) {
+          console.warn("[WS] failed to send hello:", err);
+        }
+      });
+
+      ws.addEventListener("message", async (event) => {
+        try {
+          const msg = JSON.parse(String(event.data || "{}"));
+          const type = String(msg?.type || "").trim();
+          const data = msg?.data || {};
+
+          if (type === "hello-ack") {
+            console.log("[WS] hello-ack", data);
+            return;
+          }
+
+          if (type === "gate-update") {
+            console.log("[WS] gate-update event received", data);
+            handleGateUpdate(data);
+
+            loadDashboardStats();
+            loadChart();
+            loadActivityFeed();
+            return;
+          }
+
+          if (type === "video-frame") {
+            console.log("[WS] video-frame event received", data);
+
+            const streamId = String(data?.stream_id || "").trim();
+            if (!streamId) return;
+
+            const ts = data?.ts || Date.now();
+            updateSlotFrame(streamId, ts);
+            return;
+          }
+
+          if (type === "pong") {
+            return;
+          }
+
+          console.log("[WS] unhandled message type:", type, msg);
+        } catch (err) {
+          console.warn("[WS] invalid message:", err);
+        }
+      });
+
+      ws.addEventListener("close", () => {
+        console.warn("[WS] disconnected");
+        ws = null;
+        scheduleReconnect();
+      });
+
+      ws.addEventListener("error", (err) => {
+        console.warn("[WS] error:", err);
+      });
+    } catch (err) {
+      console.warn("[WS] connect failed:", err);
+      scheduleReconnect();
+    }
   }
 
   const band = document.querySelector(".gate-status-band");
@@ -741,7 +804,7 @@
   }
 
   const handleGateUpdate = (data) => {
-    console.log("[Pusher] gate-update event received", data);
+    console.log("[GateUI] gate-update event received", data);
 
     if (!data?.vehicleFound) {
       if (gateVehicleImg) gateVehicleImg.src = "";
@@ -1062,32 +1125,13 @@
   setInterval(monitorCameraTimeouts, 1000);
   setInterval(pollAssignedFrames, FRAME_POLL_MS);
 
-  if (channel) {
-    console.log("[Pusher] binding gate-update handler");
-    channel.bind("gate-update", async (data) => {
-      console.log("[Pusher] gate-update event received", data);
-      handleGateUpdate(data);
+  connectRealtime();
 
-      loadDashboardStats();
-      loadChart();
-      loadActivityFeed();
-    });
-  } else {
-    console.warn("[Pusher] gate channel is not available");
-  }
-
-  if (videoChannel) {
-    console.log("[Pusher] binding video frame handler");
-    videoChannel.bind("frame", (data) => {
-      console.log("[video-channel/frame]", data);
-
-      const streamId = String(data?.stream_id || "").trim();
-      if (!streamId) return;
-
-      const ts = data?.ts || Date.now();
-      updateSlotFrame(streamId, ts);
-    });
-  } else {
-    console.warn("[Pusher] video channel is not available");
-  }
+  window.addEventListener("beforeunload", () => {
+    wsManualClose = true;
+    clearReconnectTimer();
+    try {
+      if (ws) ws.close();
+    } catch {}
+  });
 });
