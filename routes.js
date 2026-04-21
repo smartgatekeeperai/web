@@ -75,4 +75,12 @@ export function registerRoutes(app, { pool, webRoutes, publicDir }) {
   app.get("/api/vehicles", controllers.getVehicles);
   app.post("/api/vehicles", controllers.upsertVehicle);
   app.delete("/api/vehicles/:id", controllers.deleteVehicle);
+
+  app.get("/api/lights", controllers.getLights);
+  app.post("/api/lights", controllers.upsertLight);
+  app.delete("/api/lights/:name/:secretKey", controllers.deleteLight);
+
+  app.get("/api/summary", controllers.getSummary);
+  app.get("/api/logs", controllers.getLogs);
+  app.get("/api/chart", controllers.getChart);
 }

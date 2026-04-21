@@ -1,0 +1,59 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Smart Gate Keeper AI - Activity Feed</title>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
+    />
+    <link rel="stylesheet" href="/css/layout.css" />
+    <link rel="stylesheet" href="/css/activity-feed.css" />
+  </head>
+
+  <body data-page="activity-feed">
+    <div id="app"></div>
+
+    <template id="page-content">
+      <div class="search-container">
+        <div class="search-bar">
+          <input
+            type="text"
+            id="searchInput"
+            placeholder="Search activity (plate, driver, vehicle type)..."
+          />
+          <i class="fas fa-search search-icon"></i>
+        </div>
+      </div>
+
+      <div class="activity-feed">
+        <div class="activity-header">
+          <div class="activity-header-left">
+            <span class="activity-header-title">Activity Feed</span>
+            <span class="activity-header-sub">
+              Vehicle registration activity from gate
+            </span>
+          </div>
+        </div>
+
+        <div class="activity-filter-bar">
+          <div class="activity-history-filters" id="activityHistoryFilters">
+            <div class="chip-group" id="activityResolutionChips">
+              <button class="chip active" data-resolution="hour">Hourly</button>
+              <button class="chip" data-resolution="day">Daily</button>
+              <button class="chip" data-resolution="week">Weekly</button>
+            </div>
+            <select id="activityRangeSelect" class="chart-range-select"></select>
+          </div>
+        </div>
+
+        <div class="activity-list" id="activityList"></div>
+      </div>
+    </template>
+
+    <script src="js/layout.js"></script>
+    <script src="js/modal.js"></script>
+    <script src="js/activity-feed.js"></script>
+  </body>
+</html>

@@ -1,4 +1,3 @@
-// public/js/layout.js
 document.addEventListener("DOMContentLoaded", async () => {
   const isProd = !["localhost", "127.", "192.168.", "10."].some((prefix) =>
     location.hostname.startsWith(prefix),
@@ -192,8 +191,12 @@ document.addEventListener("DOMContentLoaded", async () => {
           <li data-page="dashboard"><a href="${
             HAS_HTML ? "/dashboard.html" : "dashboard"
           }">Dashboard</a></li>
-          <li data-page="camera"><a>Camera</a></li>
-          <li data-page="logs"><a>Logs</a></li>
+          <li data-page="lights"><a href="${
+            HAS_HTML ? "/lights.html" : "lights"
+          }">Lights</a></li>
+          <li data-page="activity-feed"><a href="${
+            HAS_HTML ? "/activity-feed.html" : "activity-feed"
+          }">Activity Feed</a></li>
           <li data-page="drivers"><a href="${
             HAS_HTML ? "/drivers.html" : "drivers"
           }">Drivers</a></li>
@@ -209,7 +212,6 @@ document.addEventListener("DOMContentLoaded", async () => {
           <li data-page="users"><a href="${
             HAS_HTML ? "/users.html" : "users"
           }">Users</a></li>
-          <li data-page="system-config"><a>System Config</a></li>
         </ul>
 
         <div class="user-profile" id="sidebar-user-profile">
@@ -328,38 +330,57 @@ document.addEventListener("DOMContentLoaded", async () => {
     return "http://localhost:8000";
   };
 
-  let publicConfigCache = null;
+  let publicConfigCache = {};
 
   async function loadPublicConfig(names = []) {
     const uniqueNames = [...new Set((names || []).filter(Boolean))];
     if (!uniqueNames.length) return {};
 
-    if (publicConfigCache) {
-      return publicConfigCache;
+    const missingNames = uniqueNames.filter(
+      (name) => !(name in publicConfigCache),
+    );
+
+    if (missingNames.length > 0) {
+      const query = encodeURIComponent(missingNames.join(","));
+      const resp = await fetch(`/api/public-config?names=${query}`, {
+        method: "GET",
+        cache: "no-store",
+      });
+
+      if (!resp.ok) {
+        throw new Error(`Failed to load public config (${resp.status})`);
+      }
+
+      const result = await resp.json();
+      if (!result?.success) {
+        throw new Error(result?.message || "Failed to load public config");
+      }
+
+      const loadedData = result?.data || {};
+      publicConfigCache = {
+        ...publicConfigCache,
+        ...loadedData,
+      };
     }
 
-    const query = encodeURIComponent(uniqueNames.join(","));
-    const resp = await fetch(`/api/public-config?names=${query}`, {
-      method: "GET",
-      cache: "no-store",
+    const selected = {};
+    uniqueNames.forEach((name) => {
+      if (name in publicConfigCache) {
+        selected[name] = publicConfigCache[name];
+      }
     });
 
-    if (!resp.ok) {
-      throw new Error(`Failed to load public config (${resp.status})`);
-    }
-
-    const result = await resp.json();
-    if (!result?.success) {
-      throw new Error(result?.message || "Failed to load public config");
-    }
-
-    publicConfigCache = result?.data || {};
-    return publicConfigCache;
+    return selected;
   }
 
   window.getPusherConfig = async () => {
     const config = await loadPublicConfig(["pusher"]);
     return config?.pusher || null;
+  };
+
+  window.getAIConfig = async () => {
+    const config = await loadPublicConfig(["ai"]);
+    return config?.ai || null;
   };
 
   window.getRoleTypes = function () {
@@ -586,8 +607,9 @@ document.addEventListener("DOMContentLoaded", async () => {
     if (
       userMenu.contains(e.target) ||
       (userProfile && userProfile.contains(e.target))
-    )
+    ) {
       return;
+    }
     closeUserMenu();
   });
 

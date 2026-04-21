@@ -1,37 +1,35 @@
-﻿// public/js/dashboard.js
-
-document.addEventListener("DOMContentLoaded", async () => {
+﻿document.addEventListener("DOMContentLoaded", async () => {
   const RESOLUTION_CONFIG = {
     hour: {
+      apiType: "hourly",
       unit: "hours",
       label: "Last",
       ranges: [6, 12, 24],
-      labelFormatter: (range) =>
-        Array.from({ length: range }, (_, i) => {
-          const diff = range - 1 - i;
-          return diff === 0 ? "Now" : `-${diff}h`;
-        }),
+      defaultValue: 6,
     },
     day: {
+      apiType: "daily",
       unit: "days",
       label: "Last",
       ranges: [3, 7, 14],
-      labelFormatter: (range) =>
-        Array.from({ length: range }, (_, i) => {
-          const diff = range - 1 - i;
-          return diff === 0 ? "Today" : `-${diff}d`;
-        }),
+      defaultValue: 3,
     },
     week: {
+      apiType: "weekly",
       unit: "weeks",
       label: "Last",
       ranges: [4, 8, 12],
-      labelFormatter: (range) =>
-        Array.from({ length: range }, (_, i) => {
-          const diff = range - 1 - i;
-          return diff === 0 ? "This week" : `-${diff}w`;
-        }),
+      defaultValue: 4,
     },
+  };
+
+  const COLORS = {
+    car: "rgba(52, 152, 219, 1)",
+    pickup: "rgba(241, 196, 15, 1)",
+    utilityVehicle: "rgba(155, 89, 182, 1)",
+    motorcycle: "rgba(231, 76, 60, 1)",
+    truck: "rgba(39, 174, 96, 1)",
+    bus: "rgba(230, 126, 34, 1)",
   };
 
   const ctx = document.getElementById("peakHoursChart")?.getContext("2d");
@@ -39,59 +37,225 @@ document.addEventListener("DOMContentLoaded", async () => {
   const rangeSelect = document.getElementById("rangeSelect");
   const chipsContainer = document.getElementById("resolutionChips");
 
-  const COLORS = {
-    cars: "rgba(52, 152, 219, 1)",
-    motorcycles: "rgba(231, 76, 60, 1)",
-    vans: "rgba(39, 174, 96, 1)",
-  };
+  const activityList = document.getElementById("activityList");
+  const activityResolutionChips = document.getElementById(
+    "activityResolutionChips",
+  );
+  const activityRangeSelect = document.getElementById("activityRangeSelect");
+  const searchInput = document.getElementById("searchInput");
+
+  const totalVehiclesEl = document.getElementById("totalVehicles");
+  const avgVehiclesDailyEl = document.getElementById("avgVehiclesDaily");
+  const registeredVehiclesEl = document.getElementById("registeredVehicles");
+
+  const AI_URL = String(window.getAIURL?.() || "").replace(/\/+$/, "");
+  const STREAMS_ENDPOINT = `${AI_URL}/streams`;
+
+  let AI_CONFIG = null;
+  let LOG_THUMBNAIL_BASE_URL = "";
 
   let currentResolution = "hour";
   let currentRange = RESOLUTION_CONFIG[currentResolution].ranges[0];
   let chartInstance = null;
 
-  async function fetchTrafficData(resolution, range) {
-    await new Promise((resolve) => setTimeout(resolve, 250));
-    const points = range;
+  let activityResolution = "hour";
+  let activityRange = RESOLUTION_CONFIG[activityResolution].ranges[0];
+  let historyEvents = [];
+  let currentRenderedEvents = [];
 
-    const makeSeries = (base, variance = 25) =>
-      Array.from({ length: points }, (_, i) => {
-        const wave = Math.sin(i / 1.3) * 15;
-        const noise = Math.random() * variance - variance / 2;
-        return Math.max(0, Math.round(base + wave + noise));
-      });
+  function parseMaybeJson(value) {
+    if (!value) return null;
+    if (typeof value === "object") return value;
+    if (typeof value !== "string") return null;
+    try {
+      return JSON.parse(value);
+    } catch {
+      return null;
+    }
+  }
 
-    let baseCars, baseMoto, baseVans;
-    if (resolution === "hour") {
-      baseCars = 80;
-      baseMoto = 70;
-      baseVans = 50;
-    } else if (resolution === "day") {
-      baseCars = 400;
-      baseMoto = 320;
-      baseVans = 220;
-    } else {
-      baseCars = 2000;
-      baseMoto = 1600;
-      baseVans = 1100;
+  function escapeHtml(value) {
+    return String(value ?? "")
+      .replaceAll("&", "&amp;")
+      .replaceAll("<", "&lt;")
+      .replaceAll(">", "&gt;")
+      .replaceAll('"', "&quot;")
+      .replaceAll("'", "&#039;");
+  }
+
+  function formatNumber(value) {
+    return Number(value || 0).toLocaleString();
+  }
+
+  function pad2(value) {
+    return String(value).padStart(2, "0");
+  }
+
+  function formatTimeLabel(dateValue) {
+    const dt = new Date(dateValue);
+    if (Number.isNaN(dt.getTime())) return "---";
+
+    let hours = dt.getHours();
+    const minutes = pad2(dt.getMinutes());
+    const suffix = hours >= 12 ? "PM" : "AM";
+    hours = hours % 12 || 12;
+    return `${hours}:${minutes} ${suffix}`;
+  }
+
+  function formatDateTimeLabel(dateValue) {
+    const dt = new Date(dateValue);
+    if (Number.isNaN(dt.getTime())) return "---";
+
+    const month = dt.toLocaleString("en-US", { month: "short" });
+    const day = dt.getDate();
+    return `${month} ${day}, ${formatTimeLabel(dt)}`;
+  }
+
+  function normalizeVerification(value) {
+    const raw = String(value || "").trim().toLowerCase();
+
+    if (
+      raw === "registered" ||
+      raw === "verified" ||
+      raw === "authorized" ||
+      raw === "matched"
+    ) {
+      return "registered";
     }
 
+    return "not-registered";
+  }
+
+  function resolvePreviewUrl(value) {
+    const raw = String(value || "").trim();
+
+    if (!raw) return "images/no-video.png";
+    if (/^https?:\/\//i.test(raw)) return raw;
+    if (raw.startsWith("/")) return raw;
+
+    if (LOG_THUMBNAIL_BASE_URL) {
+      return `${LOG_THUMBNAIL_BASE_URL}${encodeURIComponent(raw)}`;
+    }
+
+    return "images/no-video.png";
+  }
+
+  function normalizeLogToActivityItem(log) {
+    const driver = parseMaybeJson(log?.driver);
+    const vehicle = parseMaybeJson(log?.vehicle);
+    const status = normalizeVerification(log?.verification);
+
     return {
-      labels: RESOLUTION_CONFIG[resolution].labelFormatter(range),
-      datasets: {
-        cars: makeSeries(baseCars),
-        motorcycles: makeSeries(baseMoto),
-        vans: makeSeries(baseVans),
-      },
+      id: log?.id ?? `${log?.plateNumber || "unknown"}-${log?.createdAt || ""}`,
+      plate: String(log?.plateNumber || "---").trim() || "---",
+      status,
+      timeLabel: formatDateTimeLabel(log?.createdAt),
+      vehicleType:
+        vehicle?.type ||
+        log?.vehicleType ||
+        log?.type ||
+        "Unknown vehicle",
+      driver: driver?.fullName || log?.driverName || "",
+      source:
+        log?.cameraSource ||
+        (status === "registered" ? "Plate recognition" : ""),
+      reason:
+        status === "registered"
+          ? ""
+          : log?.reason || "Plate not found in registry",
+      thumbnailUrl: resolvePreviewUrl(log?.imagePreview),
+      createdAt: log?.createdAt || null,
+      searchableText: [
+        log?.plateNumber,
+        driver?.fullName,
+        vehicle?.type,
+        vehicle?.brand,
+        vehicle?.model,
+        log?.cameraSource,
+        log?.verification,
+      ]
+        .filter(Boolean)
+        .join(" ")
+        .toLowerCase(),
     };
+  }
+
+  async function loadAIConfig() {
+    try {
+      AI_CONFIG = await window.getAIConfig?.();
+      LOG_THUMBNAIL_BASE_URL = String(AI_CONFIG?.logThumbnail || "").trim();
+
+      if (LOG_THUMBNAIL_BASE_URL && !LOG_THUMBNAIL_BASE_URL.endsWith("/")) {
+        LOG_THUMBNAIL_BASE_URL += "/";
+      }
+
+      console.log("[AI Config]", AI_CONFIG);
+      console.log("[AI Thumbnail Base]", LOG_THUMBNAIL_BASE_URL);
+    } catch (err) {
+      console.warn("[AI Config] failed to load:", err);
+      AI_CONFIG = null;
+      LOG_THUMBNAIL_BASE_URL = "";
+    }
+  }
+
+  async function fetchLogsByResolution(resolution, range) {
+    const cfg = RESOLUTION_CONFIG[resolution];
+    const url = `/api/logs?type=${encodeURIComponent(
+      cfg.apiType,
+    )}&value=${encodeURIComponent(range)}`;
+
+    const resp = await fetch(url, {
+      method: "GET",
+      cache: "no-store",
+    });
+
+    if (!resp.ok) {
+      throw new Error(`Failed to load logs (${resp.status})`);
+    }
+
+    const result = await resp.json();
+
+    if (!result?.success) {
+      throw new Error(result?.message || "Failed to load logs");
+    }
+
+    return Array.isArray(result?.data) ? result.data : [];
+  }
+
+  async function fetchChartByResolution(resolution, range) {
+    const cfg = RESOLUTION_CONFIG[resolution];
+    const url = `/api/chart?type=${encodeURIComponent(
+      cfg.apiType,
+    )}&value=${encodeURIComponent(range)}`;
+
+    const resp = await fetch(url, {
+      method: "GET",
+      cache: "no-store",
+    });
+
+    if (!resp.ok) {
+      throw new Error(`Failed to load chart (${resp.status})`);
+    }
+
+    const result = await resp.json();
+
+    if (!result?.success) {
+      throw new Error(result?.message || "Failed to load chart");
+    }
+
+    return Array.isArray(result?.data) ? result.data : [];
   }
 
   function renderLegend() {
     if (!legendContainer) return;
 
     const items = [
-      { label: "Cars", color: COLORS.cars },
-      { label: "Motorcycles", color: COLORS.motorcycles },
-      { label: "Vans", color: COLORS.vans },
+      { label: "Car", color: COLORS.car },
+      { label: "Pickup", color: COLORS.pickup },
+      { label: "Utility Vehicle", color: COLORS.utilityVehicle },
+      { label: "Motorcycle", color: COLORS.motorcycle },
+      { label: "Truck", color: COLORS.truck },
+      { label: "Bus", color: COLORS.bus },
     ];
 
     legendContainer.innerHTML = items
@@ -99,9 +263,9 @@ document.addEventListener("DOMContentLoaded", async () => {
         (item) => `
           <div class="legend-item">
             <div class="legend-color" style="background-color: ${item.color};"></div>
-            <span>${item.label}</span>
+            <span>${escapeHtml(item.label)}</span>
           </div>
-        `
+        `,
       )
       .join("");
   }
@@ -116,108 +280,329 @@ document.addEventListener("DOMContentLoaded", async () => {
           <option value="${value}">
             ${cfg.label} ${value} ${cfg.unit}
           </option>
-        `
+        `,
       )
       .join("");
     currentRange = cfg.ranges[0];
   }
 
+  function updateActivityRangeSelect() {
+    if (!activityRangeSelect) return;
+
+    const cfg = RESOLUTION_CONFIG[activityResolution];
+    activityRangeSelect.innerHTML = cfg.ranges
+      .map(
+        (value) => `
+          <option value="${value}">
+            ${cfg.label} ${value} ${cfg.unit}
+          </option>
+        `,
+      )
+      .join("");
+    activityRange = cfg.ranges[0];
+  }
+
   async function loadChart() {
     if (!ctx) return;
 
-    const { labels, datasets } = await fetchTrafficData(
-      currentResolution,
-      currentRange
-    );
+    try {
+      const chartRows = await fetchChartByResolution(
+        currentResolution,
+        currentRange,
+      );
 
-    const data = {
-      labels,
-      datasets: [
-        {
-          label: "Cars",
-          data: datasets.cars,
-          borderColor: COLORS.cars,
-          backgroundColor: "rgba(52,152,219,0.1)",
-          pointRadius: 4,
-          pointHoverRadius: 6,
-          pointBorderWidth: 2,
-          tension: 0.35,
-          fill: true,
-        },
-        {
-          label: "Motorcycles",
-          data: datasets.motorcycles,
-          borderColor: COLORS.motorcycles,
-          backgroundColor: "rgba(231,76,60,0.08)",
-          pointRadius: 4,
-          pointHoverRadius: 6,
-          pointBorderWidth: 2,
-          tension: 0.35,
-          fill: false,
-        },
-        {
-          label: "Vans",
-          data: datasets.vans,
-          borderColor: COLORS.vans,
-          backgroundColor: "rgba(39,174,96,0.08)",
-          pointRadius: 4,
-          pointHoverRadius: 6,
-          pointBorderWidth: 2,
-          tension: 0.35,
-          fill: false,
-        },
-      ],
-    };
+      const data = {
+        labels: chartRows.map((x) => x.label),
+        datasets: [
+          {
+            label: "Car",
+            data: chartRows.map((x) => Number(x.car || 0)),
+            borderColor: COLORS.car,
+            backgroundColor: "rgba(52,152,219,0.10)",
+            pointRadius: 4,
+            pointHoverRadius: 6,
+            pointBorderWidth: 2,
+            tension: 0.35,
+            fill: true,
+          },
+          {
+            label: "Pickup",
+            data: chartRows.map((x) => Number(x.pickup || 0)),
+            borderColor: COLORS.pickup,
+            backgroundColor: "rgba(241,196,15,0.08)",
+            pointRadius: 4,
+            pointHoverRadius: 6,
+            pointBorderWidth: 2,
+            tension: 0.35,
+            fill: false,
+          },
+          {
+            label: "Utility Vehicle",
+            data: chartRows.map((x) => Number(x.utilityVehicle || 0)),
+            borderColor: COLORS.utilityVehicle,
+            backgroundColor: "rgba(155,89,182,0.08)",
+            pointRadius: 4,
+            pointHoverRadius: 6,
+            pointBorderWidth: 2,
+            tension: 0.35,
+            fill: false,
+          },
+          {
+            label: "Motorcycle",
+            data: chartRows.map((x) => Number(x.motorcycle || 0)),
+            borderColor: COLORS.motorcycle,
+            backgroundColor: "rgba(231,76,60,0.08)",
+            pointRadius: 4,
+            pointHoverRadius: 6,
+            pointBorderWidth: 2,
+            tension: 0.35,
+            fill: false,
+          },
+          {
+            label: "Truck",
+            data: chartRows.map((x) => Number(x.truck || 0)),
+            borderColor: COLORS.truck,
+            backgroundColor: "rgba(39,174,96,0.08)",
+            pointRadius: 4,
+            pointHoverRadius: 6,
+            pointBorderWidth: 2,
+            tension: 0.35,
+            fill: false,
+          },
+          {
+            label: "Bus",
+            data: chartRows.map((x) => Number(x.bus || 0)),
+            borderColor: COLORS.bus,
+            backgroundColor: "rgba(230,126,34,0.08)",
+            pointRadius: 4,
+            pointHoverRadius: 6,
+            pointBorderWidth: 2,
+            tension: 0.35,
+            fill: false,
+          },
+        ],
+      };
 
-    const options = {
-      responsive: true,
-      maintainAspectRatio: false,
-      interaction: { mode: "index", intersect: false },
-      plugins: {
-        legend: { display: false },
-        tooltip: {
-          backgroundColor: "rgba(17,24,39,0.92)",
-          padding: 10,
-          cornerRadius: 6,
-          titleFont: { size: 12, weight: "600" },
-          bodyFont: { size: 11 },
-          callbacks: {
-            label: (context) => {
-              const value = context.parsed.y || 0;
-              return `${context.dataset.label}: ${value} vehicles`;
+      const options = {
+        responsive: true,
+        maintainAspectRatio: false,
+        interaction: { mode: "index", intersect: false },
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            backgroundColor: "rgba(17,24,39,0.92)",
+            padding: 10,
+            cornerRadius: 6,
+            titleFont: { size: 12, weight: "600" },
+            bodyFont: { size: 11 },
+            callbacks: {
+              afterTitle: (items) => {
+                const idx = items?.[0]?.dataIndex ?? -1;
+                if (idx < 0) return "";
+                const row = chartRows[idx];
+                return `Peak Value: ${Number(row?.peakValue || 0)}`;
+              },
+              label: (context) => {
+                const value = context.parsed.y || 0;
+                return `${context.dataset.label}: ${value} unique plates`;
+              },
             },
           },
         },
-      },
-      scales: {
-        x: {
-          grid: { display: false },
-          ticks: { color: "#6b7280", maxRotation: 0 },
+        scales: {
+          x: {
+            title: {
+              display: true,
+              text:
+                currentResolution === "hour"
+                  ? "Hour"
+                  : currentResolution === "day"
+                    ? "Day"
+                    : "Date Range",
+              color: "#6b7280",
+            },
+            grid: { display: false },
+            ticks: { color: "#6b7280", maxRotation: 0 },
+          },
+          y: {
+            title: {
+              display: true,
+              text: "Peak Value",
+              color: "#6b7280",
+            },
+            beginAtZero: true,
+            grid: { color: "rgba(209,213,219,0.4)", drawBorder: false },
+            ticks: {
+              color: "#9ca3af",
+              precision: 0,
+            },
+          },
         },
-        y: {
-          beginAtZero: true,
-          grid: { color: "rgba(209,213,219,0.4)", drawBorder: false },
-          ticks: { color: "#9ca3af" },
-        },
-      },
-    };
+      };
 
-    if (chartInstance) {
-      chartInstance.data = data;
-      chartInstance.options = options;
-      chartInstance.update();
-    } else {
-      chartInstance = new Chart(ctx, {
-        type: "line",
-        data,
-        options,
-      });
+      if (chartInstance) {
+        chartInstance.data = data;
+        chartInstance.options = options;
+        chartInstance.update();
+      } else {
+        chartInstance = new Chart(ctx, {
+          type: "line",
+          data,
+          options,
+        });
+      }
+    } catch (err) {
+      console.error("[dashboard chart] error:", err);
+
+      if (chartInstance) {
+        chartInstance.data = {
+          labels: [],
+          datasets: [],
+        };
+        chartInstance.update();
+      }
     }
+  }
+
+  function getFilteredEvents(events) {
+    const query = String(searchInput?.value || "")
+      .trim()
+      .toLowerCase();
+
+    if (!query) return events;
+    return events.filter((evt) => evt.searchableText.includes(query));
+  }
+
+  function renderActivity(events) {
+    if (!activityList) return;
+
+    currentRenderedEvents = Array.isArray(events) ? events : [];
+    const filteredEvents = getFilteredEvents(currentRenderedEvents);
+
+    if (!filteredEvents.length) {
+      activityList.innerHTML = `
+        <div class="activity-item">
+          <div class="activity-details">
+            <div class="activity-main-row">
+              <span class="badge-plate">No records found</span>
+            </div>
+            <div class="activity-meta">No activity matched the current filter.</div>
+          </div>
+        </div>
+      `;
+      return;
+    }
+
+    activityList.innerHTML = filteredEvents
+      .map((evt) => {
+        const statusClass =
+          evt.status === "registered" ? "registered" : "not-registered";
+        const statusLabel =
+          evt.status === "registered" ? "Registered" : "Not registered";
+        const metaLine =
+          evt.status === "registered"
+            ? evt.driver
+              ? `<strong>Driver:</strong> ${escapeHtml(
+                  evt.driver,
+                )} · <strong>Source:</strong> ${escapeHtml(evt.source)}`
+              : `<strong>Source:</strong> ${escapeHtml(
+                  evt.source || "Plate recognition",
+                )}`
+            : `<strong>Reason:</strong> ${escapeHtml(
+                evt.reason || "Unknown",
+              )}`;
+
+        return `
+          <div class="activity-item">
+            <div class="activity-thumbnail">
+              <img src="${escapeHtml(evt.thumbnailUrl)}" alt="Captured frame for ${escapeHtml(
+                evt.plate,
+              )}" />
+            </div>
+            <div class="activity-details">
+              <div class="activity-main-row">
+                <span class="badge-plate">${escapeHtml(evt.plate)}</span>
+              </div>
+              <div class="activity-sub-row">
+                <span><i class="far fa-clock"></i> ${escapeHtml(
+                  evt.timeLabel,
+                )}</span>
+                <span>${escapeHtml(evt.vehicleType || "---")}</span>
+              </div>
+              <div class="activity-meta">${metaLine}</div>
+            </div>
+            <div class="activity-confidence-badge ${statusClass}">${statusLabel}</div>
+          </div>
+        `;
+      })
+      .join("");
+  }
+
+  async function loadActivityFeed() {
+    try {
+      const logs = await fetchLogsByResolution(activityResolution, activityRange);
+      historyEvents = logs
+        .map(normalizeLogToActivityItem)
+        .sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+
+      renderActivity(historyEvents);
+    } catch (err) {
+      console.error("[activity feed] error:", err);
+      historyEvents = [];
+      renderActivity([]);
+    }
+  }
+
+  async function loadDashboardStats() {
+    try {
+      const resp = await fetch("/api/summary", {
+        method: "GET",
+        cache: "no-store",
+      });
+
+      if (!resp.ok) {
+        throw new Error(`Failed to load summary (${resp.status})`);
+      }
+
+      const result = await resp.json();
+
+      if (!result?.success) {
+        throw new Error(result?.message || "Failed to load summary");
+      }
+
+      const summary = result?.data || {};
+
+      if (totalVehiclesEl) {
+        totalVehiclesEl.textContent = formatNumber(summary.totalVehiclesToday || 0);
+      }
+
+      if (avgVehiclesDailyEl) {
+        avgVehiclesDailyEl.textContent = formatNumber(summary.averageVehiclesDaily || 0);
+      }
+
+      if (registeredVehiclesEl) {
+        registeredVehiclesEl.textContent = formatNumber(summary.registeredVehicles || 0);
+      }
+
+      const peakHoursEl = document.querySelector(".stat-card:nth-child(4) h3");
+      if (peakHoursEl) {
+        peakHoursEl.textContent = summary.peakHours || "---";
+      }
+    } catch (err) {
+      console.error("[dashboard summary] error:", err);
+    }
+  }
+
+  function renderLegendAndInit() {
+    renderLegend();
+    updateRangeSelect();
+    updateActivityRangeSelect();
   }
 
   chipsContainer?.addEventListener("click", (evt) => {
     const chip = evt.target.closest(".chip");
     if (!chip) return;
+
     const res = chip.dataset.resolution;
     if (!res || res === currentResolution) return;
 
@@ -236,194 +621,35 @@ document.addEventListener("DOMContentLoaded", async () => {
     loadChart();
   });
 
-  renderLegend();
-  updateRangeSelect();
-  loadChart();
-
-  const activityList = document.getElementById("activityList");
-  const activityModeChips = document.getElementById("activityModeChips");
-  const activityHistoryFilters = document.getElementById("activityHistoryFilters");
-  const activityResolutionChips = document.getElementById("activityResolutionChips");
-  const activityRangeSelect = document.getElementById("activityRangeSelect");
-  const liveDot = document.getElementById("liveDot");
-  const activityModeLabel = document.getElementById("activityModeLabel");
-
-  let activityMode = "live";
-  let activityResolution = "hour";
-  let activityRange = RESOLUTION_CONFIG[activityResolution].ranges[0];
-
-  const STATIC_LIVE_EVENTS = [
-    {
-      plate: "ABC-123",
-      status: "registered",
-      timeLabel: "10:30 AM",
-      vehicleType: "Sedan",
-      driver: "John Doe",
-      source: "Registered plate",
-      reason: "",
-      thumbnailUrl: "images/no-video.png",
-    },
-    {
-      plate: "XYZ-789",
-      status: "not-registered",
-      timeLabel: "10:25 AM",
-      vehicleType: "Pickup",
-      driver: "",
-      source: "",
-      reason: "Plate not found in registry",
-      thumbnailUrl: "images/no-video.png",
-    },
-    {
-      plate: "DEF-456",
-      status: "registered",
-      timeLabel: "10:20 AM",
-      vehicleType: "Motorcycle",
-      driver: "Jane Smith",
-      source: "RFID sticker",
-      reason: "",
-      thumbnailUrl: "images/no-video.png",
-    },
-  ];
-
-  function renderActivity(events) {
-    if (!activityList) return;
-
-    activityList.innerHTML = events
-      .map((evt) => {
-        const statusClass =
-          evt.status === "registered" ? "registered" : "not-registered";
-        const statusLabel =
-          evt.status === "registered" ? "Registered" : "Not registered";
-        const metaLine =
-          evt.status === "registered"
-            ? evt.driver
-              ? `<strong>Driver:</strong> ${evt.driver} · <strong>Source:</strong> ${evt.source}`
-              : `<strong>Source:</strong> ${evt.source || "Plate recognition"}`
-            : `<strong>Reason:</strong> ${evt.reason || "Unknown"}`;
-
-        return `
-          <div class="activity-item">
-            <div class="activity-thumbnail">
-              <img src="${evt.thumbnailUrl}" alt="Captured frame for ${evt.plate}" />
-            </div>
-            <div class="activity-details">
-              <div class="activity-main-row">
-                <span class="badge-plate">${evt.plate}</span>
-              </div>
-              <div class="activity-sub-row">
-                <span><i class="far fa-clock"></i> ${evt.timeLabel}</span>
-                <span>${evt.vehicleType}</span>
-              </div>
-              <div class="activity-meta">${metaLine}</div>
-            </div>
-            <div class="activity-confidence-badge ${statusClass}">${statusLabel}</div>
-          </div>
-        `;
-      })
-      .join("");
-  }
-
-  async function fetchActivityHistory(resolution, range) {
-    await new Promise((resolve) => setTimeout(resolve, 250));
-    const labels = RESOLUTION_CONFIG[resolution].labelFormatter(range);
-
-    return labels.map((lbl, index) => {
-      const isRegistered = Math.random() > 0.25;
-      return {
-        plate: ["ABC-123", "XYZ-789", "DEF-456", "JHK-771"][index % 4],
-        status: isRegistered ? "registered" : "not-registered",
-        timeLabel: lbl,
-        vehicleType: ["Sedan", "Pickup", "Motorcycle"][index % 3],
-        driver: isRegistered
-          ? ["John Doe", "Jane Smith", "Alex Cruz"][index % 3]
-          : "",
-        source: isRegistered ? "Plate recognition" : "",
-        reason: !isRegistered ? "Plate not found in registry" : "",
-        thumbnailUrl: "images/no-video.png",
-      };
-    });
-  }
-
-  function updateActivityRangeSelect() {
-    if (!activityRangeSelect) return;
-
-    const cfg = RESOLUTION_CONFIG[activityResolution];
-    activityRangeSelect.innerHTML = cfg.ranges
-      .map(
-        (value) => `
-          <option value="${value}">
-            ${cfg.label} ${value} ${cfg.unit}
-          </option>
-        `
-      )
-      .join("");
-    activityRange = cfg.ranges[0];
-  }
-
-  async function loadHistoryActivity() {
-    const events = await fetchActivityHistory(activityResolution, activityRange);
-    renderActivity(events);
-  }
-
-  function setMode(newMode) {
-    activityMode = newMode;
-
-    if (activityMode === "live") {
-      liveDot?.classList.add("on");
-      if (activityModeLabel) {
-        activityModeLabel.textContent = "Live · Last 20 events";
-      }
-      if (activityHistoryFilters) {
-        activityHistoryFilters.style.display = "none";
-      }
-      renderActivity(STATIC_LIVE_EVENTS);
-    } else {
-      liveDot?.classList.remove("on");
-      const cfg = RESOLUTION_CONFIG[activityResolution];
-      if (activityModeLabel) {
-        activityModeLabel.textContent = `History · ${cfg.label} ${activityRange} ${cfg.unit}`;
-      }
-      if (activityHistoryFilters) {
-        activityHistoryFilters.style.display = "flex";
-      }
-      loadHistoryActivity();
-    }
-  }
-
-  activityModeChips?.addEventListener("click", (evt) => {
-    const chip = evt.target.closest(".chip");
-    if (!chip) return;
-    const mode = chip.dataset.mode;
-    if (!mode || mode === activityMode) return;
-
-    activityModeChips.querySelectorAll(".chip").forEach((btn) => {
-      btn.classList.toggle("active", btn === chip);
-    });
-
-    setMode(mode);
-  });
-
   activityResolutionChips?.addEventListener("click", (evt) => {
     const chip = evt.target.closest(".chip");
     if (!chip) return;
+
     const res = chip.dataset.resolution;
     if (!res || res === activityResolution) return;
 
     activityResolution = res;
+
     activityResolutionChips.querySelectorAll(".chip").forEach((btn) => {
       btn.classList.toggle("active", btn === chip);
     });
+
     updateActivityRangeSelect();
-    if (activityMode === "history") loadHistoryActivity();
+    loadActivityFeed();
   });
 
   activityRangeSelect?.addEventListener("change", (evt) => {
     activityRange = Number(evt.target.value) || activityRange;
-    if (activityMode === "history") loadHistoryActivity();
+    loadActivityFeed();
   });
 
-  updateActivityRangeSelect();
-  setMode("live");
+  searchInput?.addEventListener("input", () => {
+    renderActivity(historyEvents);
+  });
+
+  renderLegendAndInit();
+  await loadAIConfig();
+  await Promise.all([loadChart(), loadActivityFeed(), loadDashboardStats()]);
 
   let pusher = null;
   let channel = null;
@@ -502,6 +728,18 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   reset();
 
+  function getVehicleImageFromType(typeValue) {
+    const raw = String(typeValue || "").trim().toLowerCase();
+
+    if (raw.includes("motor")) return "images/motorcycle.png";
+    if (raw.includes("pickup")) return "images/pickup.png";
+    if (raw.includes("truck")) return "images/truck.png";
+    if (raw.includes("bus")) return "images/bus.png";
+    if (raw.includes("van")) return "images/van.png";
+
+    return "images/car.png";
+  }
+
   const handleGateUpdate = (data) => {
     console.log("[Pusher] gate-update event received", data);
 
@@ -517,7 +755,9 @@ document.addEventListener("DOMContentLoaded", async () => {
       return;
     }
 
-    if (gateVehicleImg) gateVehicleImg.src = "images/car.png";
+    if (gateVehicleImg) {
+      gateVehicleImg.src = getVehicleImageFromType(data?.vehicle?.type);
+    }
 
     if (!data?.driver || !data?.vehicle) {
       if (band) {
@@ -560,15 +800,13 @@ document.addEventListener("DOMContentLoaded", async () => {
     scheduleGateReset();
   };
 
-  const AI_URL = String(window.getAIURL?.() || "").replace(/\/+$/, "");
-  const STREAMS_ENDPOINT = `${AI_URL}/streams`;
   const SLOT_ASSIGNMENTS_KEY = "dashboard_camera_slot_assignments_v1";
   const CAMERA_TIMEOUT_MS = 4000;
   const STREAMS_REFRESH_MS = 3000;
   const FRAME_POLL_MS = 1000;
 
   const cameraCards = Array.from(
-    document.querySelectorAll(".camera-previews .camera-card")
+    document.querySelectorAll(".camera-previews .camera-card"),
   );
 
   const slots = cameraCards.map((card, index) => {
@@ -662,7 +900,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   function autoAssignEmptySlots() {
     const assigned = new Set(
-      slots.map((slot) => slot.assignedStreamId).filter(Boolean)
+      slots.map((slot) => slot.assignedStreamId).filter(Boolean),
     );
 
     const freeStreams = availableStreams
@@ -682,7 +920,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
       const selected = slot.assignedStreamId || "";
       const onlineInfo = availableStreams.find(
-        (s) => s.stream_id === slot.assignedStreamId
+        (s) => s.stream_id === slot.assignedStreamId,
       );
 
       const options = [
@@ -690,11 +928,11 @@ document.addEventListener("DOMContentLoaded", async () => {
         ...availableStreams.map(
           (stream) => `
             <option value="${stream.stream_id}" ${
-            stream.stream_id === selected ? "selected" : ""
-          }>
+              stream.stream_id === selected ? "selected" : ""
+            }>
               ${stream.stream_id}
             </option>
-          `
+          `,
         ),
       ].join("");
 
@@ -752,7 +990,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   function updateSlotFrame(streamId, ts) {
     const matchedSlots = slots.filter(
-      (slot) => slot.assignedStreamId && slot.assignedStreamId === streamId
+      (slot) => slot.assignedStreamId && slot.assignedStreamId === streamId,
     );
 
     matchedSlots.forEach((slot) => {
@@ -761,7 +999,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
       if (slot.img) {
         const nextSrc = `${AI_URL}/latest-frame?stream_id=${encodeURIComponent(
-          streamId
+          streamId,
         )}&ts=${ts || Date.now()}`;
 
         slot.lastImageUrl = nextSrc;
@@ -782,7 +1020,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       }
 
       const nextSrc = `${AI_URL}/latest-frame?stream_id=${encodeURIComponent(
-        streamId
+        streamId,
       )}&ts=${Date.now()}`;
 
       if (slot.img) {
@@ -803,7 +1041,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
       if (slot.lastFrameTs === null) {
         const info = availableStreams.find(
-          (s) => s.stream_id === slot.assignedStreamId
+          (s) => s.stream_id === slot.assignedStreamId,
         );
         updateSlotStatus(slot, !!info?.is_online);
         return;
@@ -826,9 +1064,13 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   if (channel) {
     console.log("[Pusher] binding gate-update handler");
-    channel.bind("gate-update", (data) => {
+    channel.bind("gate-update", async (data) => {
       console.log("[Pusher] gate-update event received", data);
       handleGateUpdate(data);
+
+      loadDashboardStats();
+      loadChart();
+      loadActivityFeed();
     });
   } else {
     console.warn("[Pusher] gate channel is not available");

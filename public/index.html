@@ -1,6 +1,4 @@
-﻿<!-- public/index.html -->
-
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
@@ -192,25 +190,15 @@
       <div class="activity-feed">
         <div class="activity-header">
           <div class="activity-header-left">
-            <span class="activity-header-title">Live Activity Feed</span>
-            <span class="activity-header-sub"
-              >Real-time registration checks from gate</span
-            >
-          </div>
-          <div class="activity-header-right">
-            <span class="activity-mode-pill" id="activityModePill">
-              <span class="live-dot on" id="liveDot"></span>
-              <span id="activityModeLabel">Live · Last 20 events</span>
+            <span class="activity-header-title">Activity Feed</span>
+            <span class="activity-header-sub">
+              Vehicle registration activity from gate
             </span>
           </div>
         </div>
 
         <div class="activity-filter-bar">
-          <div class="chip-group" id="activityModeChips">
-            <button class="chip active" data-mode="live">Live</button>
-            <button class="chip" data-mode="history">History</button>
-          </div>
-          <div class="activity-history-filters" id="activityHistoryFilters">
+          <div class="activity-history-filters" id="activityHistoryFilters" style="display: flex;">
             <div class="chip-group" id="activityResolutionChips">
               <button class="chip active" data-resolution="hour">Hourly</button>
               <button class="chip" data-resolution="day">Daily</button>
@@ -222,7 +210,7 @@
 
         <div class="activity-list" id="activityList"></div>
       </div>
-
+      
       <div class="widget">
         <div class="chart-header">
           <h4>Peak Vehicle Flow</h4>

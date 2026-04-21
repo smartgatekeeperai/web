@@ -125,6 +125,15 @@ export function createControllers({ pool }) {
           console.log("[public-config] cloud pusher config =", payload);
           return payload;
         },
+        ai: () => {
+          const baseUrl = String(process.env.AI_SERVER_URL || "")
+            .trim()
+            .replace(/\/+$/, "");
+
+          return {
+            logThumbnail: baseUrl ? `${baseUrl}/images/` : "",
+          };
+        }
       };
 
       const data = {};
@@ -1148,6 +1157,749 @@ export function createControllers({ pool }) {
     }
   }
 
+    async function getLights(req, res) {
+    try {
+      const rows = await dbQuery(
+        `
+        SELECT *
+        FROM dbo."Lights"
+        WHERE "Active" = true
+        ORDER BY COALESCE("UpdatedAt", "CreatedAt") DESC, "Name" ASC
+        `,
+      );
+
+      return res.json({
+        success: true,
+        data: camelcaseKeys(rows),
+      });
+    } catch (err) {
+      console.error("[getLights] error:", err);
+      return res.status(500).json({
+        success: false,
+        message: "Failed to fetch Lights",
+      });
+    }
+  }
+
+  async function upsertLight(req, res) {
+    try {
+      const {
+        originalName,
+        originalSecretKey,
+        name,
+        secretKey,
+        cameraStreamId,
+      } = req.body || {};
+
+      const finalName = String(name || "").trim().toUpperCase();
+      const finalSecretKey = String(secretKey || "").trim().toUpperCase();
+      const finalCameraStreamId = String(cameraStreamId || "").trim();
+
+      if (!finalName || !finalSecretKey || !finalCameraStreamId) {
+        return res.status(400).json({
+          success: false,
+          message: "Name, SecretKey, and CameraStreamId are required",
+        });
+      }
+
+      if (finalName.length > 4) {
+        return res.status(400).json({
+          success: false,
+          message: "Name must be at most 4 characters",
+        });
+      }
+
+      if (finalSecretKey.length > 4) {
+        return res.status(400).json({
+          success: false,
+          message: "SecretKey must be at most 4 characters",
+        });
+      }
+
+      const hasOriginalKeys =
+        String(originalName || "").trim() && String(originalSecretKey || "").trim();
+
+      let rows;
+
+      if (hasOriginalKeys) {
+        const oldName = String(originalName || "").trim().toUpperCase();
+        const oldSecretKey = String(originalSecretKey || "").trim().toUpperCase();
+
+        const existing = await dbQuery(
+          `
+          SELECT *
+          FROM dbo."Lights"
+          WHERE "Name" = $1
+            AND "SecretKey" = $2
+            AND "Active" = true
+          `,
+          [oldName, oldSecretKey],
+        );
+
+        if (!existing.length) {
+          return res.status(404).json({
+            success: false,
+            message: "Light not found",
+          });
+        }
+
+        rows = await dbQuery(
+          `
+          UPDATE dbo."Lights"
+          SET
+            "Name" = $1,
+            "SecretKey" = $2,
+            "CameraStreamId" = $3,
+            "UpdatedAt" = NOW()
+          WHERE "Name" = $4
+            AND "SecretKey" = $5
+          RETURNING *
+          `,
+          [finalName, finalSecretKey, finalCameraStreamId, oldName, oldSecretKey],
+        );
+      } else {
+        rows = await dbQuery(
+          `
+          INSERT INTO dbo."Lights" (
+            "Name",
+            "SecretKey",
+            "CameraStreamId"
+          )
+          VALUES ($1, $2, $3)
+          RETURNING *
+          `,
+          [finalName, finalSecretKey, finalCameraStreamId],
+        );
+      }
+
+      return res.json({
+        success: true,
+        data: camelcaseKeys(rows[0]),
+      });
+    } catch (err) {
+      console.error("[upsertLight] error:", err);
+
+      if (err?.message?.includes("duplicate") || err?.code === "23505") {
+        return res.status(400).json({
+          success: false,
+          message: "Light already exists",
+        });
+      }
+
+      return res.status(500).json({
+        success: false,
+        message: "Failed to save Light",
+      });
+    }
+  }
+
+  async function deleteLight(req, res) {
+    try {
+      const { name, secretKey } = req.params;
+
+      const finalName = String(name || "").trim().toUpperCase();
+      const finalSecretKey = String(secretKey || "").trim().toUpperCase();
+
+      const rows = await dbQuery(
+        `
+        UPDATE dbo."Lights"
+        SET
+          "Active" = false,
+          "UpdatedAt" = NOW()
+        WHERE "Name" = $1
+          AND "SecretKey" = $2
+          AND "Active" = true
+        RETURNING *
+        `,
+        [finalName, finalSecretKey],
+      );
+
+      if (!rows.length) {
+        return res.status(404).json({
+          success: false,
+          message: "Light not found",
+        });
+      }
+
+      return res.json({
+        success: true,
+      });
+    } catch (err) {
+      console.error("[deleteLight] error:", err);
+      return res.status(500).json({
+        success: false,
+        message: "Failed to delete Light",
+      });
+    }
+  }
+
+  async function getSummary(req, res) {
+    try {
+      const now = new Date();
+
+      function toSqlLocalTimestamp(date) {
+        const yyyy = date.getFullYear();
+        const mm = String(date.getMonth() + 1).padStart(2, "0");
+        const dd = String(date.getDate()).padStart(2, "0");
+        const hh = String(date.getHours()).padStart(2, "0");
+        const mi = String(date.getMinutes()).padStart(2, "0");
+        const ss = String(date.getSeconds()).padStart(2, "0");
+        const ms = String(date.getMilliseconds()).padStart(3, "0");
+        return `${yyyy}-${mm}-${dd} ${hh}:${mi}:${ss}.${ms}`;
+      }
+
+      function startOfDay(dateValue) {
+        const d = new Date(dateValue);
+        d.setHours(0, 0, 0, 0);
+        return d;
+      }
+
+      function addDays(dateValue, days) {
+        const d = new Date(dateValue);
+        d.setDate(d.getDate() + days);
+        return d;
+      }
+
+      function formatHourLabel(hour24) {
+        const suffix = hour24 >= 12 ? "PM" : "AM";
+        const hour12 = hour24 % 12 || 12;
+        return `${hour12}`;
+      }
+
+      function formatTwoHourRangeLabel(startHour) {
+        const endHour = (startHour + 2) % 24;
+
+        const startLabel = formatHourLabel(startHour);
+        const endLabel = formatHourLabel(endHour);
+
+        const suffix =
+          startHour < 12
+            ? endHour === 0 || endHour <= 12
+              ? "AM"
+              : "PM"
+            : "PM";
+
+        return `${startLabel}-${endLabel} ${suffix}`;
+      }
+
+      const todayStart = startOfDay(now);
+      const tomorrowStart = addDays(todayStart, 1);
+      const sevenDaysStart = addDays(todayStart, -6);
+
+      const todayStartSql = toSqlLocalTimestamp(todayStart);
+      const tomorrowStartSql = toSqlLocalTimestamp(tomorrowStart);
+      const sevenDaysStartSql = toSqlLocalTimestamp(sevenDaysStart);
+
+      const cacheKey = `summary:v2:${todayStartSql.slice(0, 10)}`;
+      const cached = crudCache.get(cacheKey);
+      if (cached) {
+        return res.json(cached);
+      }
+
+      const [
+        totalTodayRows,
+        avgDailyRows,
+        activeDriversRows,
+        hourlyRows,
+      ] = await Promise.all([
+        dbQuery(
+          `
+          SELECT COUNT(DISTINCT TRIM(UPPER("PlateNumber"))) AS "total"
+          FROM dbo."Logs"
+          WHERE "CreatedAt" >= $1::timestamp
+            AND "CreatedAt" < $2::timestamp
+            AND NULLIF(TRIM("PlateNumber"), '') IS NOT NULL
+          `,
+          [todayStartSql, tomorrowStartSql],
+        ),
+
+        dbQuery(
+          `
+          SELECT
+            DATE("CreatedAt") AS "logDate",
+            COUNT(DISTINCT TRIM(UPPER("PlateNumber"))) AS "dailyTotal"
+          FROM dbo."Logs"
+          WHERE "CreatedAt" >= $1::timestamp
+            AND "CreatedAt" < $2::timestamp
+            AND NULLIF(TRIM("PlateNumber"), '') IS NOT NULL
+          GROUP BY DATE("CreatedAt")
+          ORDER BY DATE("CreatedAt") ASC
+          `,
+          [sevenDaysStartSql, tomorrowStartSql],
+        ),
+
+        dbQuery(
+          `
+          SELECT COUNT(*) AS "total"
+          FROM dbo."Drivers"
+          WHERE "Active" = true
+          `,
+        ),
+
+        dbQuery(
+          `
+          SELECT
+            EXTRACT(HOUR FROM "CreatedAt")::int AS "hourOfDay",
+            COUNT(DISTINCT TRIM(UPPER("PlateNumber"))) AS "hourlyTotal"
+          FROM dbo."Logs"
+          WHERE "CreatedAt" >= $1::timestamp
+            AND "CreatedAt" < $2::timestamp
+            AND NULLIF(TRIM("PlateNumber"), '') IS NOT NULL
+          GROUP BY EXTRACT(HOUR FROM "CreatedAt")
+          ORDER BY EXTRACT(HOUR FROM "CreatedAt") ASC
+          `,
+          [todayStartSql, tomorrowStartSql],
+        ),
+      ]);
+
+      const totalVehiclesToday = Number(totalTodayRows?.[0]?.total ?? 0);
+
+      const avgRows = camelcaseKeys(avgDailyRows);
+      const averageVehiclesDaily =
+        avgRows.length > 0
+          ? Math.round(
+              avgRows.reduce(
+                (sum, row) => sum + Number(row.dailyTotal || 0),
+                0,
+              ) / avgRows.length,
+            )
+          : 0;
+
+      const registeredVehicles = Number(activeDriversRows?.[0]?.total ?? 0);
+
+      const hourMap = new Map();
+      for (let hour = 0; hour < 24; hour += 1) {
+        hourMap.set(hour, 0);
+      }
+
+      for (const row of camelcaseKeys(hourlyRows)) {
+        const hour = Number(row.hourOfDay);
+        const total = Number(row.hourlyTotal || 0);
+        if (hour >= 0 && hour <= 23) {
+          hourMap.set(hour, total);
+        }
+      }
+
+      const groupedRanges = [];
+      for (let startHour = 0; startHour < 24; startHour += 2) {
+        const count = (hourMap.get(startHour) || 0) + (hourMap.get(startHour + 1) || 0);
+        groupedRanges.push({
+          label: formatTwoHourRangeLabel(startHour),
+          value: count,
+          startHour,
+        });
+      }
+
+      groupedRanges.sort((a, b) => {
+        if (b.value !== a.value) return b.value - a.value;
+        return a.startHour - b.startHour;
+      });
+
+      const peakHours = groupedRanges[0]?.label || "---";
+
+      const payload = {
+        success: true,
+        data: {
+          totalVehiclesToday,
+          averageVehiclesDaily,
+          registeredVehicles,
+          peakHours,
+        },
+        debug: {
+          todayStart: todayStartSql,
+          tomorrowStart: tomorrowStartSql,
+          last7DaysStart: sevenDaysStartSql,
+        },
+      };
+
+      crudCache.set(cacheKey, payload);
+      return res.json(payload);
+    } catch (err) {
+      console.error("[getSummary] error:", err);
+      return res.status(500).json({
+        success: false,
+        message: "Failed to fetch summary",
+      });
+    }
+  }
+
+  async function getLogs(req, res) {
+    try {
+      let { type, value } = req.query;
+
+      type = String(type || "").trim().toLowerCase();
+      value = Number(value);
+
+      if (!["hourly", "daily", "weekly"].includes(type)) {
+        return res.status(400).json({
+          success: false,
+          message: "Invalid type. Allowed values: hourly, daily, weekly",
+        });
+      }
+
+      if (!Number.isInteger(value) || value <= 0) {
+        return res.status(400).json({
+          success: false,
+          message: "Invalid value. It must be a positive integer",
+        });
+      }
+
+      const now = new Date();
+      const cutoff = new Date(now);
+
+      if (type === "hourly") {
+        cutoff.setTime(now.getTime() - value * 60 * 60 * 1000);
+      } else if (type === "daily") {
+        cutoff.setTime(now.getTime() - value * 24 * 60 * 60 * 1000);
+      } else if (type === "weekly") {
+        cutoff.setTime(now.getTime() - value * 7 * 24 * 60 * 60 * 1000);
+      }
+
+      function toSqlLocalTimestamp(date) {
+        const yyyy = date.getFullYear();
+        const mm = String(date.getMonth() + 1).padStart(2, "0");
+        const dd = String(date.getDate()).padStart(2, "0");
+        const hh = String(date.getHours()).padStart(2, "0");
+        const mi = String(date.getMinutes()).padStart(2, "0");
+        const ss = String(date.getSeconds()).padStart(2, "0");
+        const ms = String(date.getMilliseconds()).padStart(3, "0");
+
+        return `${yyyy}-${mm}-${dd} ${hh}:${mi}:${ss}.${ms}`;
+      }
+
+      const nowSql = toSqlLocalTimestamp(now);
+      const cutoffSql = toSqlLocalTimestamp(cutoff);
+
+      const cacheKey = `logs:${type}:${value}:${cutoffSql.slice(0, 13)}`;
+      const cached = crudCache.get(cacheKey);
+      if (cached) {
+        return res.json(cached);
+      }
+
+      const rows = await dbQuery(
+        `
+        SELECT *
+        FROM dbo."Logs"
+        WHERE "CreatedAt" >= $1::timestamp
+          AND "CreatedAt" <= $2::timestamp
+        ORDER BY "CreatedAt" DESC
+        `,
+        [cutoffSql, nowSql],
+      );
+
+      const payload = {
+        success: true,
+        data: camelcaseKeys(rows),
+        total: rows.length,
+        filter: {
+          type,
+          value,
+        },
+        debug: {
+          now: nowSql,
+          cutoff: cutoffSql,
+        },
+      };
+
+      crudCache.set(cacheKey, payload);
+      return res.json(payload);
+    } catch (err) {
+      console.error("[getLogs] error:", err);
+      return res.status(500).json({
+        success: false,
+        message: "Failed to fetch Logs",
+      });
+    }
+  }
+  
+  async function getChart(req, res) {
+    try {
+      let { type, value } = req.query;
+
+      type = String(type || "").trim().toLowerCase();
+      value = Number(value);
+
+      if (!["hourly", "daily", "weekly"].includes(type)) {
+        return res.status(400).json({
+          success: false,
+          message: "Invalid type. Allowed values: hourly, daily, weekly",
+        });
+      }
+
+      if (!Number.isInteger(value) || value <= 0) {
+        return res.status(400).json({
+          success: false,
+          message: "Invalid value. It must be a positive integer",
+        });
+      }
+
+      function toSqlLocalTimestamp(date) {
+        const yyyy = date.getFullYear();
+        const mm = String(date.getMonth() + 1).padStart(2, "0");
+        const dd = String(date.getDate()).padStart(2, "0");
+        const hh = String(date.getHours()).padStart(2, "0");
+        const mi = String(date.getMinutes()).padStart(2, "0");
+        const ss = String(date.getSeconds()).padStart(2, "0");
+        const ms = String(date.getMilliseconds()).padStart(3, "0");
+        return `${yyyy}-${mm}-${dd} ${hh}:${mi}:${ss}.${ms}`;
+      }
+
+      function parseMaybeJson(value) {
+        if (!value) return null;
+        if (typeof value === "object") return value;
+        if (typeof value !== "string") return null;
+        try {
+          return JSON.parse(value);
+        } catch {
+          return null;
+        }
+      }
+
+      function classifyVehicleType(typeValue) {
+        const raw = String(typeValue || "").trim().toLowerCase();
+
+        if (!raw) return "car";
+        if (raw.includes("motor")) return "motorcycle";
+        if (raw.includes("pickup")) return "pickup";
+        if (raw.includes("truck")) return "truck";
+        if (raw.includes("bus")) return "bus";
+        if (
+          raw.includes("utility") ||
+          raw.includes("uv") ||
+          raw.includes("suv") ||
+          raw.includes("van")
+        ) {
+          return "utilityVehicle";
+        }
+
+        return "car";
+      }
+
+      function startOfHour(dateValue) {
+        const d = new Date(dateValue);
+        d.setMinutes(0, 0, 0);
+        return d;
+      }
+
+      function startOfDay(dateValue) {
+        const d = new Date(dateValue);
+        d.setHours(0, 0, 0, 0);
+        return d;
+      }
+
+      function startOfWeek(dateValue) {
+        const d = new Date(dateValue);
+        d.setHours(0, 0, 0, 0);
+        const day = d.getDay();
+        const diff = day === 0 ? -6 : 1 - day;
+        d.setDate(d.getDate() + diff);
+        return d;
+      }
+
+      function addHours(dateValue, hours) {
+        const d = new Date(dateValue);
+        d.setHours(d.getHours() + hours);
+        return d;
+      }
+
+      function addDays(dateValue, days) {
+        const d = new Date(dateValue);
+        d.setDate(d.getDate() + days);
+        return d;
+      }
+
+      function addWeeks(dateValue, weeks) {
+        return addDays(dateValue, weeks * 7);
+      }
+
+      function pad2(value) {
+        return String(value).padStart(2, "0");
+      }
+
+      function formatBucketKey(dateValue, resolution) {
+        const d = new Date(dateValue);
+
+        if (resolution === "hourly") {
+          const h = startOfHour(d);
+          return `${h.getFullYear()}-${pad2(h.getMonth() + 1)}-${pad2(
+            h.getDate()
+          )} ${pad2(h.getHours())}:00`;
+        }
+
+        if (resolution === "daily") {
+          const day = startOfDay(d);
+          return `${day.getFullYear()}-${pad2(day.getMonth() + 1)}-${pad2(
+            day.getDate()
+          )}`;
+        }
+
+        const week = startOfWeek(d);
+        return `${week.getFullYear()}-${pad2(week.getMonth() + 1)}-${pad2(
+          week.getDate()
+        )}`;
+      }
+
+      function formatBucketLabel(dateValue, resolution) {
+        const d = new Date(dateValue);
+
+        if (resolution === "hourly") {
+          let hours = d.getHours();
+          const suffix = hours >= 12 ? "PM" : "AM";
+          hours = hours % 12 || 12;
+          return `${hours} ${suffix}`;
+        }
+
+        if (resolution === "daily") {
+          return d.toLocaleDateString("en-US", {
+            month: "short",
+            day: "numeric",
+          });
+        }
+
+        const end = addDays(d, 6);
+        return `${d.toLocaleDateString("en-US", {
+          month: "short",
+          day: "numeric",
+        })} - ${end.toLocaleDateString("en-US", {
+          month: "short",
+          day: "numeric",
+        })}`;
+      }
+
+      function createBucket(current, chartType) {
+        return {
+          key: formatBucketKey(current, chartType),
+          label: formatBucketLabel(current, chartType),
+          plates: new Set(),
+          categoryPlates: {
+            car: new Set(),
+            pickup: new Set(),
+            utilityVehicle: new Set(),
+            motorcycle: new Set(),
+            truck: new Set(),
+            bus: new Set(),
+          },
+        };
+      }
+
+      function buildBuckets(chartType, chartValue, now) {
+        const buckets = [];
+
+        if (chartType === "hourly") {
+          let start = startOfHour(now);
+          start = addHours(start, -(chartValue - 1));
+          for (let i = 0; i < chartValue; i += 1) {
+            buckets.push(createBucket(addHours(start, i), chartType));
+          }
+          return buckets;
+        }
+
+        if (chartType === "daily") {
+          let start = startOfDay(now);
+          start = addDays(start, -(chartValue - 1));
+          for (let i = 0; i < chartValue; i += 1) {
+            buckets.push(createBucket(addDays(start, i), chartType));
+          }
+          return buckets;
+        }
+
+        let start = startOfWeek(now);
+        start = addWeeks(start, -(chartValue - 1));
+        for (let i = 0; i < chartValue; i += 1) {
+          buckets.push(createBucket(addWeeks(start, i), chartType));
+        }
+        return buckets;
+      }
+
+      const now = new Date();
+      const cutoff = new Date(now);
+
+      if (type === "hourly") {
+        cutoff.setTime(now.getTime() - value * 60 * 60 * 1000);
+      } else if (type === "daily") {
+        cutoff.setTime(now.getTime() - value * 24 * 60 * 60 * 1000);
+      } else if (type === "weekly") {
+        cutoff.setTime(now.getTime() - value * 7 * 24 * 60 * 60 * 1000);
+      }
+
+      const nowSql = toSqlLocalTimestamp(now);
+      const cutoffSql = toSqlLocalTimestamp(cutoff);
+
+      const cacheKey = `chart:safe:v2:${type}:${value}:${cutoffSql.slice(0, 13)}`;
+      const cached = crudCache.get(cacheKey);
+      if (cached) {
+        return res.json(cached);
+      }
+
+      const rows = await dbQuery(
+        `
+        SELECT "PlateNumber", "CreatedAt", "Vehicle"
+        FROM dbo."Logs"
+        WHERE "CreatedAt" >= $1::timestamp
+          AND "CreatedAt" <= $2::timestamp
+          AND NULLIF(TRIM("PlateNumber"), '') IS NOT NULL
+        ORDER BY "CreatedAt" ASC
+        `,
+        [cutoffSql, nowSql]
+      );
+
+      const logs = camelcaseKeys(rows);
+      const buckets = buildBuckets(type, value, now);
+      const bucketMap = new Map(buckets.map((bucket) => [bucket.key, bucket]));
+
+      for (const log of logs) {
+        const createdAt = log?.createdAt;
+        const plateNumber = String(log?.plateNumber || "").trim().toUpperCase();
+
+        if (!createdAt || !plateNumber) continue;
+
+        const vehicle = parseMaybeJson(log?.vehicle);
+        const vehicleType = vehicle?.type || "";
+        const category = classifyVehicleType(vehicleType);
+
+        const bucketKey = formatBucketKey(createdAt, type);
+        const bucket = bucketMap.get(bucketKey);
+        if (!bucket) continue;
+
+        bucket.plates.add(plateNumber);
+        bucket.categoryPlates[category].add(plateNumber);
+      }
+
+      const payload = {
+        success: true,
+        data: buckets.map((bucket) => ({
+          label: bucket.label,
+          peakValue: bucket.plates.size,
+          car: bucket.categoryPlates.car.size,
+          pickup: bucket.categoryPlates.pickup.size,
+          utilityVehicle: bucket.categoryPlates.utilityVehicle.size,
+          motorcycle: bucket.categoryPlates.motorcycle.size,
+          truck: bucket.categoryPlates.truck.size,
+          bus: bucket.categoryPlates.bus.size,
+        })),
+        filter: {
+          type,
+          value,
+        },
+        debug: {
+          now: nowSql,
+          cutoff: cutoffSql,
+          countBasis: "unique plate number per bucket",
+        },
+      };
+
+      crudCache.set(cacheKey, payload);
+      return res.json(payload);
+    } catch (err) {
+      console.error("[getChart] error:", err);
+      return res.status(500).json({
+        success: false,
+        message: "Failed to fetch chart data",
+        error: err?.message || "Unknown error",
+      });
+    }
+  }
+
   return {
     getPublicConfig,
     getVehicleBrands,
@@ -1169,5 +1921,11 @@ export function createControllers({ pool }) {
     getVehicles,
     upsertVehicle,
     deleteVehicle,
+    getLights,
+    upsertLight,
+    deleteLight,
+    getSummary,
+    getLogs,
+    getChart,
   };
 }

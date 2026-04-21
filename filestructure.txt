@@ -7,17 +7,16 @@
 |-- package-lock.json
 |-- package.json
 |-- public
-    |-- camera.html
+    |-- activity-feed.html
     |-- css
-        |-- camera.css
+        |-- activity-feed.css
         |-- dashboard.css
         |-- drivers.css
         |-- identification-types.css
         |-- layout.css
+        |-- lights.css
         |-- login.css
-        |-- logs.css
         |-- role-types.css
-        |-- system-config.css
         |-- users.css
         |-- vehicles.css
     |-- drivers.html
@@ -32,25 +31,22 @@
         |-- van.png
     |-- index.html
     |-- js
-        |-- camera.js
+        |-- activity-feed.js
         |-- dashboard.js
         |-- drivers.js
         |-- identification-types.js
         |-- layout.js
+        |-- lights.js
         |-- login.js
-        |-- logs.js
         |-- modal.js
         |-- role-types.js
-        |-- system-config.js
         |-- users.js
         |-- vehicles.js
+    |-- lights.html
     |-- login.html
-    |-- logs.html
     |-- role-types.html
-    |-- system-config.html
     |-- users.html
     |-- vehicles.html
 |-- README.md
 |-- routes.js
-|-- sensor_log.csv
 |-- vercel.json
