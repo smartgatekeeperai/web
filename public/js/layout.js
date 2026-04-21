@@ -305,7 +305,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       /^10\./.test(hostname) ||
       /^172\.(1[6-9]|2\d|3[0-1])\./.test(hostname);
 
-    const isLocalhost = hostname === "localhost" || hostname === "127.0.0.1";
+    const isLocalhost = hostname === "localhost" || hostname === "127.0.0.1" || hostname === "smartgatekeeperai.local";
 
     if (!isLocalhost && !isPrivateIpv4) {
       return "https://smartgatekeeperai-vehicle-detector.hf.space";
